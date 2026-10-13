@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling>=1.25,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "snapmaker-slicer-mcp"
+version = "0.3.0"
+description = "A small MCP layer over Snapmaker Orca's native slicing CLI"
+requires-python = ">=3.11"
+dependencies = ["mcp>=1.30,<2"]
+license = {file = "LICENSE.txt"}
+readme = "README.md"
+
+[project.urls]
+Homepage = "https://github.com/MoraesGil/snapmaker-orca-mcp"
+Repository = "https://github.com/MoraesGil/snapmaker-orca-mcp"
+Issues = "https://github.com/MoraesGil/snapmaker-orca-mcp/issues"
+
+[project.optional-dependencies]
+test = ["pytest>=8,<9", "pytest-asyncio>=0.24,<2"]
+
+[project.scripts]
+snapmaker-slicer-mcp = "snapmaker_slicer_mcp.cli:main"
+
+[tool.hatch.build.targets.wheel.force-include]
+"THIRD_PARTY.md" = "snapmaker_slicer_mcp/THIRD_PARTY.md"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

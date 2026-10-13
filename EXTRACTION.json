@@ -1,0 +1,8 @@
+{
+  "source_repository": "https://github.com/MoraesGil/OrcaSlicer",
+  "source_commit": "ee087a5bd7ebbb5daf445211cea1a3a9e3c931ad",
+  "source_directory": "tools/slicer_mcp",
+  "native_repository": "https://github.com/Snapmaker/OrcaSlicer",
+  "native_source_commit": "9bf2f18eaff7cc0655cbdeef6a215660085ecb0f",
+  "notes": "Only tracked MCP package sources were extracted. Native engine sources, binaries, private models, G-codes and worktree artifacts are excluded. See THIRD_PARTY.md for Max Ellis attribution."
+}

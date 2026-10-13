@@ -1,0 +1,28 @@
+{
+  "repository": "Snapmaker/OrcaSlicer",
+  "commit": "9bf2f18eaff7cc0655cbdeef6a215660085ecb0f",
+  "source_directory": "resources/profiles/Snapmaker",
+  "license": "AGPL-3.0",
+  "files": [
+    {
+      "path": "filament/Generic PLA.json",
+      "sha256": "94ea1409679980d640d6df784741167ba6024bbe29afb5fc7c08f4facf74fa21",
+      "name": "Generic PLA"
+    },
+    {
+      "path": "filament/Generic PLA @U1 base.json",
+      "sha256": "df0303b27028cadacc81edc975cda2671150228ff86590591c543a7cacd9832a",
+      "name": "Generic PLA @U1 base"
+    },
+    {
+      "path": "filament/fdm_filament_pla_category.json",
+      "sha256": "861ebe22c5353bdb0be85580c97979f7670bbe834e82c3d60aaf2db3ce82a767",
+      "name": "fdm_filament_pla_category"
+    },
+    {
+      "path": "filament/fdm_filament_common.json",
+      "sha256": "a423bfe10babffa549f7de8209dd272e9ad36a3fa9e51740ffca0d81d677cb49",
+      "name": "fdm_filament_common"
+    }
+  ]
+}
