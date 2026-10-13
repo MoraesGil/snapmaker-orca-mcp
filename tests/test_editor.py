@@ -1,7 +1,9 @@
 import copy
 import hashlib
 import json
+import threading
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -50,6 +52,58 @@ def test_edit_versions_preserve_origin_and_reject_a_stale_revision(tmp_path):
     assert editor.get_status(loaded['project_id'])['sha256'] == edited['sha256']
     result = editor.slice_project(loaded['project_id'], plate=1)
     assert Path(slicer.recover_3mf(result['plates'][0]['gcode_path'])['path']).read_bytes() == Path(edited['path']).read_bytes()
+
+
+@pytest.mark.parametrize('apply_changes', [False, True])
+def test_slow_slice_releases_editor_lock_and_keeps_its_captured_revision(tmp_path, monkeypatch, apply_changes):
+    from snapmaker_slicer_mcp.editor import Editor
+    slicer, _ = boundary(tmp_path)
+    editor = Editor(slicer)
+    source = project(tmp_path / 'input.3mf')
+    original = source.read_bytes()
+    loaded = editor.load_model(str(source))
+    loaded = editor.edit_project(loaded['project_id'], [{'operation': 'add_plate'}])
+    if not apply_changes:
+        editor.set_config(loaded['project_id'], {'layer_height': 0.12}, loaded['sha256'])
+    started, release = threading.Event(), threading.Event()
+    native_slice = slicer.slice_3mf
+
+    def slow_slice(*args, **kwargs):
+        started.set()
+        if not release.wait(5):
+            raise TimeoutError('Test did not release the slice boundary')
+        return native_slice(*args, **kwargs)
+
+    monkeypatch.setattr(slicer, 'slice_3mf', slow_slice)
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        if apply_changes:
+            pending = pool.submit(editor.apply_and_slice, loaded['project_id'], {'layer_height': 0.12},
+                                  expected_sha256=loaded['sha256'])
+        else:
+            pending = pool.submit(editor.slice_project, loaded['project_id'], force=True)
+        assert started.wait(3)
+        try:
+            captured = pool.submit(editor.get_config, loaded['project_id']).result(timeout=1)
+            assert captured['config']['layer_height'] == '0.12'
+            later = pool.submit(editor.set_config, loaded['project_id'], {'layer_height': 0.16},
+                                captured['sha256']).result(timeout=1)
+            pool.submit(editor.select_plate, loaded['project_id'], 2).result(timeout=1)
+            with pytest.raises(ValueError, match='Stale'):
+                pool.submit(editor.set_config, loaded['project_id'], {'layer_height': 0.2},
+                            captured['sha256']).result(timeout=1)
+        finally:
+            release.set()
+        result = pending.result(timeout=5)
+    sliced = result['slice'] if apply_changes else result
+    assert sliced['requested_plate'] == 1
+    assert sliced['source']['sha256'] == captured['sha256'] != later['sha256']
+    with zipfile.ZipFile(sliced['source']['path']) as archive:
+        assert json.loads(archive.read('Metadata/project_settings.config'))['layer_height'] == '0.12'
+    if apply_changes:
+        assert result['project']['revision'] == captured['revision']
+        assert result['project']['sha256'] == captured['sha256']
+    assert editor.get_status(loaded['project_id'])['selected_plate'] == 2
+    assert source.read_bytes() == original
 
 
 def test_select_filament_changes_one_slot_and_preserves_preset_source(tmp_path):

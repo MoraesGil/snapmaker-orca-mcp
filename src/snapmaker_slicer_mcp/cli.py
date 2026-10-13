@@ -31,6 +31,14 @@ def main(argv=None):
     recovery.add_argument("gcode_file")
     serve = commands.add_parser("serve")
     serve.add_argument("--no-update-check", action="store_true")
+    serve.add_argument("--transport", choices=("stdio", "streamable-http"), default="stdio")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8080)
+    serve.add_argument("--auth-token-file", type=Path)
+    serve.add_argument("--allowed-host", action="append", default=[],
+                       help="Exact HTTP Host header, including port (repeatable); defaults to loopbacks")
+    serve.add_argument("--allowed-origin", action="append", default=[],
+                       help="Exact allowed HTTP Origin (repeatable); absent Origin is accepted")
     args = parser.parse_args(argv)
     try:
         if args.command == "bind-engine":
@@ -48,10 +56,24 @@ def main(argv=None):
                 elif args.command == "recover":
                     result = slicer.recover_3mf(args.gcode_file)
                 else:
-                    from .server import build_server
-                    if not args.no_update_check:
-                        engine.status(check_remote=True)
-                    build_server(slicer, args.presets).run(transport="stdio")
+                    if args.transport == "streamable-http":
+                        import uvicorn
+                        from .http_server import build_http_app
+                        if not 1 <= args.port <= 65535:
+                            raise ValueError("HTTP port must be between 1 and 65535")
+                        hosts = args.allowed_host or [f"127.0.0.1:{args.port}", f"localhost:{args.port}", f"[::1]:{args.port}"]
+                        if not args.allowed_host and args.port == 80:
+                            hosts += ["127.0.0.1", "localhost", "[::1]"]
+                        app = build_http_app(slicer, args.presets, auth_token_file=args.auth_token_file,
+                                             allowed_hosts=hosts, allowed_origins=args.allowed_origin)
+                        if not args.no_update_check:
+                            engine.status(check_remote=True)
+                        uvicorn.run(app, host=args.host, port=args.port, workers=1, access_log=False)
+                    else:
+                        from .server import build_server
+                        if not args.no_update_check:
+                            engine.status(check_remote=True)
+                        build_server(slicer, args.presets).run(transport="stdio")
                     return
         print(json.dumps(result, indent=2, ensure_ascii=False))
     except (OSError, ValueError, KeyError, RuntimeError, TimeoutError) as error:

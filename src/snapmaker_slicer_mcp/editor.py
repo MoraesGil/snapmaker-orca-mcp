@@ -426,10 +426,12 @@ class Editor:
     def slice_project(self, project_id: str, plate=None, force=False, allow_newer_file=True):
         with self._lock:
             state = self._state(project_id)
-            return self.slicer.slice_3mf(state['path'], state['selected_plate'] if plate is None else plate,
-                                         force, allow_newer_file)
+            target = state['selected_plate'] if plate is None else plate
+        # Each saved path is an immutable revision; later edits create another file.
+        return self.slicer.slice_3mf(state['path'], target, force, allow_newer_file)
 
     def apply_and_slice(self, project_id: str, changes: dict, plate=None, expected_sha256=None):
         with self._lock:
             edited = self.set_config(project_id, changes, expected_sha256)
-            return {'project': edited, 'slice': self.slice_project(project_id, plate, force=True)}
+            target = edited['selected_plate'] if plate is None else plate
+        return {'project': edited, 'slice': self.slicer.slice_3mf(edited['path'], target, force=True)}
