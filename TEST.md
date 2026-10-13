@@ -12,7 +12,7 @@ uv run pytest tests -q
 uv build
 ```
 
-The extraction baseline at `6e56b1f` passed **240 tests with 1 skip**. That baseline precedes the shared HTTP transport changes; it is not the final integrated transport test count.
+The extraction baseline at `6e56b1f` passed **240 tests with 1 skip**. The integrated 0.3.0 suite passed **267 tests with 1 skip** on macOS/Python 3.12. HTTP tests use real ASGI/TCP transports, including three simultaneous clients; native algorithms remain process doubles in this public suite.
 
 Tests use small process doubles at the native boundary to exercise source/revision preservation, stable IDs and component payloads, configuration codecs, atomic edits, stale SHA rejection, cache corruption, timeouts, recovery, preset inheritance/drafts, flow segments, settings metadata and MCP protocol behavior. These tests do not run the real slicing algorithms.
 
@@ -40,7 +40,7 @@ Segmented material selection was exercised with native string-encoded steps `["2
 
 ## Shared HTTP acceptance
 
-For an integrated release, record the tested source/package/engine identities and verify:
+Installed 0.3.0 acceptance on 2026-10-13 used one persistent Ubuntu 24.04 amd64 container, emulated on macOS ARM64 with 4 CPUs / 8 GiB and the unchanged executable/resource hashes above. Three HTTP clients shared 33 tools, three resource templates and one editor/artifact store. The checks below passed:
 
 - Invalid/missing bearer tokens, unexpected Host values and disallowed supplied Origins are rejected.
 - Three concurrent clients initialize against the same service, list 33 tools and read the three resource templates.
@@ -48,6 +48,12 @@ For an integrated release, record the tested source/package/engine identities an
 - A fresh native slice returns new nonempty output whose hashes match; cache reuse validates retained artifacts.
 - Resources and recovery refer to the captured immutable project revision.
 - A slow slice permits unrelated project-state reads; the original source and read-only preset hashes remain unchanged.
+
+The fresh saved-source request took **4.97 s** end to end (**4.40 s** in the native process); the edited private revision took **4.22 s** natively. These are observations of one small private fixture. Missing/wrong tokens and invalid supplied Origins were rejected; exact Host checks passed in the transport tests. Resources, verified cache, source recovery, stale-edit rejection and reconnecting to the same project passed. The input and all five canonical preset files retained their hashes.
+
+Four locally installed material presets resolved. One local process preset referenced a parent name absent from this engine's resources; resolution failed explicitly. No preset was overwritten and no alternative was silently adopted. This does not block slicing a complete saved project with embedded settings.
+
+Two fresh slices of the same input on the same installed backend produced different command ordering, despite identical native settings and engine identity. Timestamp changes alone do not explain those differences. Exact output-byte preservation applies to retained, hash-verified artifacts; fresh-slice byte determinism is not claimed.
 
 The HTTP process-double suite and installed native acceptance answer different questions. Authentication/liveness success alone does not establish that a particular 3MF slices correctly.
 
@@ -59,6 +65,6 @@ The HTTP process-double suite and installed native acceptance answer different q
 - **Platforms:** Linux amd64 native acceptance is recorded above. Historical macOS acceptance used the separate older `441f73c` binding. Windows and native Linux ARM64 deployment remain unvalidated.
 - **Recovery:** verified association retrieves a retained source; standalone G-code does not reconstruct meshes, painting or hierarchy.
 - **Identity:** binding checks executable/resources, while the supplied source commit remains an operator declaration. Shared libraries are not individually part of that cache identity.
-- **New slices:** timestamps and custom placeholders can change G-code bytes. Exact byte preservation applies to retained artifacts.
+- **New slices:** timestamps, custom placeholders and observed native path-order variation can change G-code bytes. Exact byte preservation applies to retained artifacts.
 
 See [Linux setup](LINUX.md), [usage](docs/usage.md) and [contribution guidance](CONTRIBUTING.md) to reproduce and report bounded results without publishing private models or logs.

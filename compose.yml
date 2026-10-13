@@ -37,6 +37,8 @@ services:
       - 127.0.0.1:8080
       - --allowed-origin
       - https://${SNAPMAKER_MCP_DOMAIN:-snapmaker-slicer.local}
+      - --allowed-origin
+      - http://${SNAPMAKER_MCP_DOMAIN:-snapmaker-slicer.local}
     labels:
       dev.orbstack.domains: ${SNAPMAKER_MCP_DOMAIN:-snapmaker-slicer.local}
       dev.orbstack.http-port: "8080"
