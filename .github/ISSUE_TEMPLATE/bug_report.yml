@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible slicing, editing or MCP transport issue.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Include a minimal reproduction. Remove tokens, credentials, personal paths and customer details from logs. Share a model only if you have permission to publish it.
+  - type: input
+    id: version
+    attributes:
+      label: Package and source version
+      placeholder: "0.3.0; Git commit if running from source"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Runtime and platform
+      description: Include OS/architecture, engine source commit, and Docker or direct runtime.
+      placeholder: "Ubuntu 24.04 amd64; official engine 9bf2f18...; Docker"
+    validations:
+      required: true
+  - type: dropdown
+    id: transport
+    attributes:
+      label: Transport
+      options:
+        - Stdio MCP
+        - Streamable HTTP MCP
+        - Direct CLI
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps or minimal calls
+      description: Include relevant options and whether the request forced a fresh slice or reused cache.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted error and relevant diagnostics
+      description: A small excerpt is enough. Do not paste bearer tokens or private project contents.
+      render: text

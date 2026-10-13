@@ -1,0 +1,32 @@
+name: Feature request
+description: Describe a concrete agent or slicing workflow to improve.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the README's shipped tools and limits first. A request can propose a future capability; please distinguish it from current behavior.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Workflow and problem
+      description: What are you trying to do, and where does the current workflow fall short?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include an example input and observable output when helpful.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or current workaround
+  - type: textarea
+    id: validation
+    attributes:
+      label: How could the result be validated?
+      description: Distinguish protocol, native G-code, GUI and physical-print evidence.
