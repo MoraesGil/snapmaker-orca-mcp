@@ -20,11 +20,13 @@ Version **0.3.0** is a standalone community project. The package and executable 
 
 Original projects and installed/canonical presets stay read-only. Preset changes create artifact-local drafts.
 
-## Five-minute quickstart
+## Quickstart
 
 **Prerequisites:** Python 3.11+, [uv](https://docs.astral.sh/uv/), a complete saved 3MF, and an already obtained official native engine with its matching libraries/resources. Engine acquisition is separate from the Python installation; see [Linux/Docker setup](LINUX.md).
 
 The validated Linux binding and adaptive adapter use official main commit `9bf2f18eaff7cc0655cbdeef6a215660085ecb0f`. Keep the engine files stable after binding.
+
+Run the direct CLI commands on a host matching your engine bundle. On macOS with the validated Linux bundle, follow the [Docker setup](LINUX.md) instead.
 
 ```sh
 git clone https://github.com/MoraesGil/snapmaker-orca-mcp.git
