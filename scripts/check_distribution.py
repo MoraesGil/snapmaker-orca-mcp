@@ -23,7 +23,7 @@ def main():
     with tarfile.open(source) as archive:
         names = archive.getnames()
         assert not any(name.lower().endswith((".3mf", ".gcode", ".env", ".appimage")) for name in names)
-        assert not any("/.temp/" in name or "/runtime/" in name or "/artifacts/" in name or "/secrets/" in name for name in names)
+        assert not any("/.temp/" in name or "/.local/" in name or "/runtime/" in name or "/artifacts/" in name or "/secrets/" in name for name in names)
     print(f"{stem}: wheel and source checked; 699 settings, license and attribution; no models, G-code, runtime or secrets.")
 
 

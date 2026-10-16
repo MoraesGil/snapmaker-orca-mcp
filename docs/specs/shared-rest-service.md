@@ -1,6 +1,6 @@
 # Agentic Slicer: REST and MCP on one backend
 
-The owner approved REST implementation and documentation publication on 2026-10-15. Keep the standalone repository `MoraesGil/snapmaker-orca-mcp`; “Agentic Slicer” describes its agent-facing workflow. The separate local installation directory contains runtime/data, not another codebase. The former full Orca fork is retired.
+The owner approved REST implementation and documentation publication on 2026-10-15. The standalone repository is `MoraesGil/snapmaker-orca-mcp`; “Agentic Slicer” describes its agent-facing workflow. Naming was consolidated on 2026-10-16: agents register only `snapmaker-orca-mcp` at `snapmaker-orca-mcp.local`, and private deployment/runtime/data live in the same checkout's ignored `.local/` directory. The former full Orca fork and previous separate operational directory are retired.
 
 ## Contract
 

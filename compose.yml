@@ -2,6 +2,7 @@ name: snapmaker-orca-mcp
 
 services:
   mcp:
+    container_name: snapmaker-orca-mcp
     image: ${SNAPMAKER_MCP_IMAGE:-snapmaker-orca-mcp:0.4.0}
     platform: linux/amd64
     init: true
@@ -32,17 +33,17 @@ services:
       - --auth-token-file
       - /run/secrets/mcp-token
       - --allowed-host
-      - ${SNAPMAKER_MCP_DOMAIN:-snapmaker-slicer.local}
+      - ${SNAPMAKER_MCP_DOMAIN:-snapmaker-orca-mcp.local}
       - --allowed-host
       - 127.0.0.1:8080
       - --allowed-origin
-      - https://${SNAPMAKER_MCP_DOMAIN:-snapmaker-slicer.local}
+      - https://${SNAPMAKER_MCP_DOMAIN:-snapmaker-orca-mcp.local}
       - --allowed-origin
-      - http://${SNAPMAKER_MCP_DOMAIN:-snapmaker-slicer.local}
+      - http://${SNAPMAKER_MCP_DOMAIN:-snapmaker-orca-mcp.local}
     labels:
-      dev.orbstack.domains: ${SNAPMAKER_MCP_DOMAIN:-snapmaker-slicer.local}
+      dev.orbstack.domains: ${SNAPMAKER_MCP_DOMAIN:-snapmaker-orca-mcp.local}
       dev.orbstack.http-port: "8080"
-      com.moraesdev.tool: snapmaker-slicer
+      com.moraesdev.tool: snapmaker-orca-mcp
     volumes:
       - type: bind
         source: ${SNAPMAKER_MCP_MODELS_DIR:?Set your read-only model directory}

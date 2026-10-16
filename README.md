@@ -8,7 +8,7 @@ Headless 3MF slicing and project editing for AI agents and applications, using t
 
 **33 MCP tools · REST + OpenAPI · Python 3.11+ · one shared backend · AGPLv3**
 
-Version **0.4.0** is a standalone community project. This repository contains the Python slicer service, not the Orca desktop GUI source tree. “Agentic Slicer” describes its workflow; the repository remains `MoraesGil/snapmaker-orca-mcp`, the package/executable `snapmaker-slicer-mcp`, and the Python import `snapmaker_slicer_mcp`. This project is independently maintained and is not an official Snapmaker product.
+Version **0.4.0** is a standalone community project. This repository contains the Python slicer service, not the Orca desktop GUI source tree. Register the MCP as **`snapmaker-orca-mcp`**; the shared local deployment uses **`snapmaker-orca-mcp.local`**. This project is independently maintained and is not an official Snapmaker product.
 
 ## What your agent can do
 
@@ -58,7 +58,7 @@ Add this entry to your MCP client's configuration, using absolute server-side pa
 ```json
 {
   "mcpServers": {
-    "snapmaker-orca": {
+    "snapmaker-orca-mcp": {
       "command": "/absolute/snapmaker-orca-mcp/.venv/bin/snapmaker-slicer-mcp",
       "args": [
         "--engine", "/absolute/runtime/engine.json",
@@ -107,7 +107,7 @@ This call waits for completion and returns the native manifest plus relative dow
 
 ## Repository, GUI and integrations
 
-- **One source repository:** `MoraesGil/snapmaker-orca-mcp` is the standalone service. A local directory named `snapmaker-slicer-mcp` may hold deployment/runtime/data; it is not a second source repository. The previous full Orca fork is retired.
+- **One source repository and service name:** `MoraesGil/snapmaker-orca-mcp` is the standalone service. The shared deployment uses `snapmaker-orca-mcp.local`, and agents register it as `snapmaker-orca-mcp`. Local deployment state can live in this checkout's ignored `.local/` directory; it is never part of the public package. The previous full Orca fork is retired.
 - **GUI compatibility:** source and working 3MFs, and exported G-code, can be opened in the official slicer subject to its format/version support. The MCP does not automate that GUI. Native failures return diagnostics; there is no automatic computer-use fallback. An operator or separate agent can inspect the exact revision in the GUI and must identify any separately generated output accordingly.
 - **Agent skills:** no companion `SKILL.md` is bundled. MCP tools provide their own descriptions; setup and usage are documented here. Locally installed CAD/computer-use skills are separate from this repository.
 - **Farm managers:** a manager such as ForjaFarm can operate on ready G-code without a slicer. Preparing jobs from 3MF, regenerating toolpaths or comparing configurations can optionally use this service. ForjaFarm remains independent; this release changes none of its code or printer behavior.

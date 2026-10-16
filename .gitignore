@@ -9,6 +9,7 @@ artifacts/
 runtime/
 
 .temp/
+/.local/
 .env
 secrets/
 .DS_Store
