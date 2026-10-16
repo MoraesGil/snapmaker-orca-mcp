@@ -91,12 +91,19 @@ def _artifact(slicer, job_id, kind, plate=None):
         try:
             if path.resolve() != path or not path.is_file():
                 _fail(409, 'artifact_conflict', 'Retained artifact is missing or a symlink')
-            with path.open('rb') as source:
-                for chunk in iter(lambda: source.read(1024 * 1024), b''):
-                    snapshot.write(chunk)
-                    digest.update(chunk)
+            source = path.open('rb')
         except OSError:
             _fail(409, 'artifact_conflict', 'Retained artifact is unavailable')
+        with source:
+            while True:
+                try:
+                    chunk = source.read(1024 * 1024)
+                except OSError:
+                    _fail(409, 'artifact_conflict', 'Retained artifact is unreadable')
+                if not chunk:
+                    break
+                snapshot.write(chunk)
+                digest.update(chunk)
         if digest.hexdigest() != expected:
             _fail(409, 'artifact_conflict', 'Retained artifact changed')
         size = snapshot.tell()

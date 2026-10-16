@@ -124,13 +124,16 @@ async def test_queued_rest_and_mcp_slices_do_not_exhaust_the_read_executor(tmp_p
                 await asyncio.gather(*pending)
 
 
-async def test_cancelled_caller_does_not_admit_another_slice_until_native_completion(tmp_path):
+@pytest.mark.parametrize('fails', [False, True])
+async def test_cancelled_caller_does_not_admit_another_slice_until_native_completion(tmp_path, caplog, fails):
     slicer, _ = make_app(tmp_path)
     started, release, second_started = threading.Event(), threading.Event(), threading.Event()
 
     def first_native():
         started.set()
         assert release.wait(5)
+        if fails:
+            raise RuntimeError('Native failure after caller disconnected')
         return 'first'
 
     def second_native():
@@ -149,6 +152,7 @@ async def test_cancelled_caller_does_not_admit_another_slice_until_native_comple
     finally:
         release.set()
         assert await asyncio.wait_for(second, 2) == 'second'
+    assert 'Task exception was never retrieved' not in caplog.text
 
 
 @pytest.mark.parametrize('kind', ['source', 'gcode', 'props', 'lines'])
@@ -181,6 +185,29 @@ async def test_response_uses_the_same_artifact_snapshot_that_was_verified(tmp_pa
         else:
             assert response.content == verified
         assert response.headers['etag'] == '"' + hashlib.sha256(verified).hexdigest() + '"'
+
+
+async def test_snapshot_storage_failure_is_service_unavailable_not_artifact_corruption(tmp_path, monkeypatch):
+    from snapmaker_slicer_mcp import rest
+    slicer, app = make_app(tmp_path)
+    source = make_project(tmp_path / 'input.3mf')
+    async with app.router.lifespan_context(app), client(app) as http:
+        job = (await http.post('/api/v1/slices', json={'input_3mf': str(source), 'plate': 1})).json()
+        original = rest.tempfile.TemporaryFile
+
+        def disk_full(*args, **kwargs):
+            snapshot = original(*args, **kwargs)
+            def write(_):
+                raise OSError(28, 'No space left on device')
+            monkeypatch.setattr(snapshot, 'write', write)
+            return snapshot
+
+        monkeypatch.setattr(rest.tempfile, 'TemporaryFile', disk_full)
+        response = await http.get(job['links']['plates']['1']['gcode'])
+        assert response.status_code == 503
+        assert response.json()['error']['code'] == 'service_io'
+        artifact = slicer.root / 'runs' / job['job_id'] / 'plate_1.gcode'
+        assert hashlib.sha256(artifact.read_bytes()).hexdigest() == job['plates'][0]['sha256']
 
 
 @pytest.mark.parametrize('extra,status', [

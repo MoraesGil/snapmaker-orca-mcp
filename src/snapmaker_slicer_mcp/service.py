@@ -87,7 +87,11 @@ class Slicer:
         pending = asyncio.create_task(asyncio.to_thread(function, *args, **kwargs))
         # A disconnected caller must not release admission while its native
         # process is still running. The thread's completion releases the gate.
-        pending.add_done_callback(lambda completed: self._admission.release())
+        def finished(completed):
+            self._admission.release()
+            if not completed.cancelled():
+                completed.exception()  # Consume late failures after disconnection.
+        pending.add_done_callback(finished)
         return await asyncio.shield(pending)
 
     def job(self, job_id: str) -> dict:
