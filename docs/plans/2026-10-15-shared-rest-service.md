@@ -6,18 +6,18 @@
 
 **Architecture:** Add Starlette REST routes to the existing authenticated MCP application. Both adapters receive the same `Slicer`; its native process, lock, artifacts and cache remain unchanged. HTTP slicing returns a completed200 response, with artifact links for app consumers.
 
-**Tech Stack:** Python3.11+, existing MCP1.30/Starlette/Pydantic/httpx/pytest, official Snapmaker Linux bundle and Docker/OrbStack.
+**Tech Stack:** Python 3.11+, existing MCP 1.30/Starlette/Pydantic/httpx/pytest, official Snapmaker Linux bundle and Docker/OrbStack.
 
 **Spec:** `docs/specs/shared-rest-service.md`.
 
 ## Constraints
 
-- Package0.4.0, unchanged native9bf2f18 and 33tools/3resource templates.
+- Package 0.4.0, unchanged native 9bf2f18 and 33 tools / 3 resource templates.
 - No GUI, automatic computer-use fallback, bundled skill, new dependency, preset mutation, ForjaFarm edit or extra container.
 - Reuse the HTTP bearer/Host/Origin middleware; read secrets only from the current private deployment.
 - Keep source/preset hashes and existing artifacts/cache valid.
 
-## Task1: Prove the REST boundary and shared backend
+## Task 1: Prove the REST boundary and shared backend
 
 Files: create `tests/test_rest.py`; modify `src/snapmaker_slicer_mcp/http_server.py`; create `src/snapmaker_slicer_mcp/rest.py`.
 
@@ -28,7 +28,7 @@ Files: create `tests/test_rest.py`; modify `src/snapmaker_slicer_mcp/http_server
 - [ ] Implement `rest_routes(slicer)` and attach its routes to `build_http_app` after `streamable_http_app()`. Use `asyncio.to_thread` for native and file/hash work; JSONResponse/FileResponse remain inside the same middleware.
 - [ ] Run focused REST+HTTP tests and the public suite; inspect source preservation, failure diagnostics and event-loop availability.
 
-## Task2: Package and document the actual product
+## Task 2: Package and document the actual product
 
 Files: `pyproject.toml`, `uv.lock`, `__init__.py` if versioned, `Dockerfile`, `.dockerignore`, `compose.yml`, `README.md`, `LINUX.md`, `docs/rest.md`, `docs/usage.md`, `TEST.md`.
 
@@ -38,7 +38,7 @@ Files: `pyproject.toml`, `uv.lock`, `__init__.py` if versioned, `Dockerfile`, `.
 - [ ] Validate local Markdown links, build distributions and run `scripts/check_distribution.py`; retain AGPL/Max/Snapmaker attribution and original artwork.
 - [ ] Request independent read-only review, fix material findings and commit tested source/docs on the owner's main.
 
-## Task3: Validate and promote the installed shared service
+## Task 3: Validate and promote the installed shared service
 
 Files: operational Compose/manifest/runbook/evidence, global TOOLING inventory.
 

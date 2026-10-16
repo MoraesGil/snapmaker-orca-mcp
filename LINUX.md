@@ -2,6 +2,8 @@
 
 Run the official Snapmaker Orca native CLI behind Snapmaker Orca MCP, without starting a desktop GUI, display server, Xvfb or VNC. This repository builds the Python service image from a separately supplied native bundle.
 
+Version **0.4.0** adds authenticated REST at `/api/v1` to the same HTTP listener as `/mcp`, sharing the engine, native lock and cache. Use one shared HTTP deployment for apps and agents; see [REST usage](docs/rest.md). The native bundle remains unchanged. A local directory used for runtime/data is an installation directory, not a second code repository.
+
 The official executable still links GTK/WebKit/OpenGL libraries. The Dockerfile includes its runtime dependencies; those libraries do not mean a desktop session is running.
 
 ## 1. Obtain the official engine
@@ -53,7 +55,7 @@ uv build
 docker build --platform linux/amd64 \
   --build-arg ENGINE_COMMIT=9bf2f18eaff7cc0655cbdeef6a215660085ecb0f \
   --build-arg ENGINE_EXECUTABLE_SHA256=b9f6c2a9d59e0fb43761c7ce3c5c5c908f68f68991e27bd314d40a88ebb66cf9 \
-  --tag snapmaker-orca-mcp:0.3.0-main-9bf2f18 .
+  --tag snapmaker-orca-mcp:0.4.0-main-9bf2f18 .
 ```
 
 This tag names **your locally built image**. It is not a claim that an image has been published to a container registry. The recorded digest applies to the exact bundle above; do not reuse it to label another binary.
@@ -91,7 +93,7 @@ docker run --detach --name snapmaker-orca-mcp --restart unless-stopped \
   --mount type=bind,source=/absolute/presets,target=/presets,readonly \
   --mount type=bind,source=/absolute/artifacts,target=/artifacts \
   --mount type=bind,source=/absolute/secrets/mcp-token,target=/run/secrets/mcp-token,readonly \
-  snapmaker-orca-mcp:0.3.0-main-9bf2f18 \
+  snapmaker-orca-mcp:0.4.0-main-9bf2f18 \
   --engine /opt/slicer-mcp/engine.json --artifacts /artifacts --presets /presets \
   serve --transport streamable-http --host 0.0.0.0 --port 8080 \
   --auth-token-file /run/secrets/mcp-token \
@@ -112,7 +114,7 @@ docker run --rm -i --platform linux/amd64 --network none \
   --mount type=bind,source=/absolute/models,target=/input,readonly \
   --mount type=bind,source=/absolute/presets,target=/presets,readonly \
   --mount type=bind,source=/absolute/artifacts,target=/artifacts \
-  snapmaker-orca-mcp:0.3.0-main-9bf2f18 \
+  snapmaker-orca-mcp:0.4.0-main-9bf2f18 \
   --engine /opt/slicer-mcp/engine.json --artifacts /artifacts --presets /presets \
   serve --no-update-check
 ```

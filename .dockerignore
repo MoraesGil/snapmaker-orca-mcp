@@ -2,7 +2,7 @@
 !Dockerfile
 !requirements-runtime.txt
 !dist/
-!dist/snapmaker_slicer_mcp-0.3.0-py3-none-any.whl
+!dist/snapmaker_slicer_mcp-0.4.0-py3-none-any.whl
 !runtime/
 !runtime/squashfs-root/
 !runtime/squashfs-root/**

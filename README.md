@@ -1,14 +1,14 @@
 ![Give your AI a Snapmaker slicer. 3MF → G-code. No GUI. Conceptual illustration of an AI agent, a 3MF build plate and colored toolpaths.](docs/assets/hero.png)
 
-# Snapmaker Orca MCP
+# Agentic Slicer · Snapmaker Orca MCP
 
-**Give your AI a Snapmaker slicer.**
+**Slice 3MFs. Inspect G-code. No GUI required.**
 
-Headless 3MF slicing and project editing for AI agents, using the **official Snapmaker Orca native engine** through the Model Context Protocol (MCP). Start with a complete saved project; get fresh G-code, configuration JSON, logs and SHA-256 provenance.
+Headless 3MF slicing and project editing for AI agents and applications, using the **official Snapmaker Orca native engine** through MCP and REST. Start with a complete saved project; get fresh G-code, configuration JSON, logs and SHA-256 provenance from one shared service.
 
-**33 tools · Python 3.11+ · stdio + authenticated Streamable HTTP · AGPLv3**
+**33 MCP tools · REST + OpenAPI · Python 3.11+ · one shared backend · AGPLv3**
 
-Version **0.3.0** is a standalone community project. The package and executable remain `snapmaker-slicer-mcp`; the Python import is `snapmaker_slicer_mcp`. This project is independently maintained and is not an official Snapmaker product.
+Version **0.4.0** is a standalone community project. This repository contains the Python slicer service, not the Orca desktop GUI source tree. “Agentic Slicer” describes its workflow; the repository remains `MoraesGil/snapmaker-orca-mcp`, the package/executable `snapmaker-slicer-mcp`, and the Python import `snapmaker_slicer_mcp`. This project is independently maintained and is not an official Snapmaker product.
 
 ## What your agent can do
 
@@ -16,9 +16,15 @@ Version **0.3.0** is a standalone community project. The package and executable 
 - **Edit a project safely.** Change settings and object/part overrides, duplicate or transform geometry, and manage plates in private, versioned 3MF revisions.
 - **Prepare plate layouts.** Use native arrangement and orientation, including distribution across plates, plus height ranges and bounded adaptive layers.
 - **Inspect the actual output.** Read new G-code, settings and diagnostics; verify hashes and recover the exact preserved source associated with an output.
-- **Share one backend.** Connect several trusted agents to one HTTP service, using the same engine, projects and artifact store.
+- **Share one backend.** Connect agents through MCP and applications through REST to the same process, native execution lock, verified cache and artifact store. Apps can download output files without mounting the artifact directory.
 
 Original projects and installed/canonical presets stay read-only. Preset changes create artifact-local drafts.
+
+## Request the evidence you need
+
+Use `get_config(keys=[...])` for selected settings, apply related changes with one atomic `edit_project`, and read bounded G-code line ranges instead of sending whole files into model context. Headless calls avoid the screenshot/menu-click loop for supported operations. A verified cache saves repeated native work.
+
+These interfaces help control agent context and interaction steps. **We have not measured comparative token savings or a guaranteed reduction in total tokens.** The 33 tool definitions and the output you request also consume context. G-code inspection supports digital checks; it does not certify a physical print.
 
 ## Quickstart
 
@@ -83,7 +89,28 @@ uv run snapmaker-slicer-mcp \
 
 Connect each client to `http://localhost:8080/mcp` with `Authorization: Bearer <your-token>`. Use your client's secret storage. Host/Origin allowlists must match the actual deployment. The shared backend has one filesystem and artifact store; it is intended for trusted clients.
 
-[Linux/Docker deployment](LINUX.md) · [Client and tool examples](docs/usage.md)
+The same listener also serves REST under `/api/v1`; the MCP adapter calls the shared Python service directly. It does not make HTTP calls to its own REST routes. Choose this shared HTTP deployment when apps and multiple agents use the service together; stdio is an alternative for an individual client.
+
+### Applications: REST on the same service
+
+```http
+POST /api/v1/slices
+Authorization: Bearer <your-token>
+Content-Type: application/json
+
+{"input_3mf":"/input/project.3mf","plate":0,"force":false}
+```
+
+This call waits for completion and returns the native manifest plus relative download links. Read `GET /api/v1/jobs/{job_id}`, download verified G-code/source/props, or request a bounded line range. The input path is on the server; no file-upload endpoint or asynchronous submission queue is shipped. Configure the client timeout for native execution and queue wait. `GET /api/v1/openapi.json` describes the authenticated contract.
+
+[REST and download examples](docs/rest.md) · [Linux/Docker deployment](LINUX.md) · [MCP examples](docs/usage.md)
+
+## Repository, GUI and integrations
+
+- **One source repository:** `MoraesGil/snapmaker-orca-mcp` is the standalone service. A local directory named `snapmaker-slicer-mcp` may hold deployment/runtime/data; it is not a second source repository. The previous full Orca fork is retired.
+- **GUI compatibility:** source and working 3MFs, and exported G-code, can be opened in the official slicer subject to its format/version support. The MCP does not automate that GUI. Native failures return diagnostics; there is no automatic computer-use fallback. An operator or separate agent can inspect the exact revision in the GUI and must identify any separately generated output accordingly.
+- **Agent skills:** no companion `SKILL.md` is bundled. MCP tools provide their own descriptions; setup and usage are documented here. Locally installed CAD/computer-use skills are separate from this repository.
+- **Farm managers:** a manager such as ForjaFarm can operate on ready G-code without a slicer. Preparing jobs from 3MF, regenerating toolpaths or comparing configurations can optionally use this service. ForjaFarm remains independent; this release changes none of its code or printer behavior.
 
 ## Edit, then slice
 

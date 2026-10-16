@@ -7,6 +7,7 @@ from starlette.datastructures import Headers
 from starlette.responses import JSONResponse
 
 from .server import build_server
+from .rest import rest_routes
 
 
 def _token_from_file(path):
@@ -76,5 +77,6 @@ def build_http_app(slicer, preset_dirs=(), *, auth_token_file=None, allowed_host
         return JSONResponse({'status': 'ok'})
 
     app = mcp.streamable_http_app()
+    app.router.routes.extend(rest_routes(slicer))
     app.add_middleware(_AccessPolicy, token=token, allowed_hosts=hosts, allowed_origins=origins)
     return app

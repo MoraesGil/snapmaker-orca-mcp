@@ -8,9 +8,9 @@ RUN python3 -m venv /venv
 COPY requirements-runtime.txt /tmp/requirements-runtime.txt
 RUN /venv/bin/pip install --no-cache-dir --require-hashes -r /tmp/requirements-runtime.txt \
     && rm /tmp/requirements-runtime.txt
-COPY dist/snapmaker_slicer_mcp-0.3.0-py3-none-any.whl /tmp/
-RUN /venv/bin/pip install --no-cache-dir --no-deps /tmp/snapmaker_slicer_mcp-0.3.0-py3-none-any.whl \
-    && rm /tmp/snapmaker_slicer_mcp-0.3.0-py3-none-any.whl
+COPY dist/snapmaker_slicer_mcp-0.4.0-py3-none-any.whl /tmp/
+RUN /venv/bin/pip install --no-cache-dir --no-deps /tmp/snapmaker_slicer_mcp-0.4.0-py3-none-any.whl \
+    && rm /tmp/snapmaker_slicer_mcp-0.4.0-py3-none-any.whl
 ENV APPDIR=/opt/orca LD_LIBRARY_PATH=/opt/orca/lib/orca-runtime:/opt/orca/bin LC_ALL=C
 COPY runtime/squashfs-root/ /opt/orca/
 RUN chmod -R a+rX /opt/orca

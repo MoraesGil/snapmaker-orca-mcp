@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "snapmaker-slicer-mcp"
-version = "0.3.0"
-description = "A small MCP layer over Snapmaker Orca's native slicing CLI"
+version = "0.4.0"
+description = "Agentic headless slicing through shared REST and MCP over the official Snapmaker Orca engine"
 requires-python = ">=3.11"
 dependencies = ["mcp>=1.30,<2"]
 license = {file = "LICENSE.txt"}

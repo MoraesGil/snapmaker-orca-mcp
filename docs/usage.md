@@ -1,5 +1,7 @@
 # Client and tool usage
 
+Applications can use the [REST routes](rest.md) on the same shared HTTP service. The MCP and REST adapters reuse one native slicer/cache; neither requires an extra container. For agent context, request selected configuration keys and bounded G-code ranges below. Comparative token savings have not been measured.
+
 Use a complete **saved 3MF**, readable by the server. Keep models and installed/canonical presets read-only; choose a separate writable artifact directory. Engine binding and container setup are in [LINUX.md](../LINUX.md).
 
 ## Connect an MCP client

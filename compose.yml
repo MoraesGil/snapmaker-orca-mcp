@@ -2,7 +2,7 @@ name: snapmaker-orca-mcp
 
 services:
   mcp:
-    image: ${SNAPMAKER_MCP_IMAGE:-snapmaker-orca-mcp:0.3.0}
+    image: ${SNAPMAKER_MCP_IMAGE:-snapmaker-orca-mcp:0.4.0}
     platform: linux/amd64
     init: true
     restart: unless-stopped
