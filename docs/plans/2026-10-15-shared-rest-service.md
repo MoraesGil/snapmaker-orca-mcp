@@ -45,5 +45,7 @@ Files: operational Compose/manifest/runbook/evidence, global TOOLING inventory.
 - [x] Build0.4.0 with the retained native runtime and compare official executable/resource hashes.
 - [x] Check the current container for active native jobs; deploy only when idle. Preserve the current URL, token, mounts/data and one backend; refresh the local-mcp adoption record.
 - [x] Authenticate through REST and MCP, force a fresh native source slice, verify cross-protocol cache/resources/download hashes and source/preset preservation. Confirm three MCP clients and container count remain one.
-- [ ] Publish main, inspect CI, create0.4.0 release assets/checksums, update repository description/topics and local documentation. Keep0.3.0 image/package for rollback.
-- [ ] Record the exact source/image/native identities, test counts, limitations and final runtime status. Do not claim GUI fallback, REST async queue, physical validation or measured token savings.
+- [x] Publish main, inspect CI, create0.4.0 release assets/checksums, update repository description/topics and local documentation. Keep0.3.0 image/package for rollback.
+- [x] Record the exact source/image/native identities, test counts, limitations and final runtime status. Do not claim GUI fallback, REST async queue, physical validation or measured token savings.
+
+Completion: installed native acceptance and releasev0.4.0 verified on2026-10-16. The final checklist commit changes documentation only; releasev0.4.0 pins the tested implementation and installed-acceptance record.
