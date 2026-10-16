@@ -25,7 +25,7 @@ Files: create `tests/test_rest.py`; modify `src/snapmaker_slicer_mcp/http_server
 - [ ] Run `uv run --locked --extra test pytest tests/test_rest.py -q`; observe missing-route404 failures before adding production REST.
 - [ ] Test authorization/Host/Origin rejection before any job creation; strict requests, missing inputs/jobs/plates, corrupt artifacts/manifests, native failures/timeouts and OpenAPI path/request-schema agreement.
 - [ ] Test a REST slice followed by an MCP cache hit through the same application, then a slow REST slice with concurrent MCP reads. Native subprocess calls remain the existing process-double fixture.
-- [ ] Implement `rest_routes(slicer)` and attach its routes to `build_http_app` after `streamable_http_app()`. Use `asyncio.to_thread` for native and file/hash work; JSONResponse/FileResponse remain inside the same middleware.
+- [ ] Implement `rest_routes(slicer)` and attach its routes to `build_http_app` after `streamable_http_app()`. Use `asyncio.to_thread` for native and file/hash work; JSON and verified-snapshot responses remain inside the same middleware. Share async admission between both adapters so queued slices do not occupy read threads.
 - [ ] Run focused REST+HTTP tests and the public suite; inspect source preservation, failure diagnostics and event-loop availability.
 
 ## Task 2: Package and document the actual product

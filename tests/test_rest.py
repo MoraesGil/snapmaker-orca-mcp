@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import json
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
@@ -29,6 +30,8 @@ async def test_rest_slices_saved_project_and_serves_verified_artifacts(tmp_path)
         assert (await http.get(job['links']['self'])).json()['job_id'] == job['job_id']
         props = await http.get(job['links']['props'])
         assert props.status_code == 200 and props.json()['native_global']['layer_height'] == '0.2'
+        assert hashlib.sha256(props.content).hexdigest() == job['props_sha256']
+        assert props.headers['etag'] == '"' + job['props_sha256'] + '"'
         restored = await http.get(job['links']['source_3mf'])
         assert restored.content == original == source.read_bytes()
         for number, expected in [(1, GCODE_1), (2, GCODE_2)]:
@@ -85,6 +88,99 @@ async def test_slow_rest_slice_keeps_mcp_reads_and_health_available(tmp_path, mo
                 release.set()
                 response = await pending
             assert response.status_code == 200
+
+
+async def test_queued_rest_and_mcp_slices_do_not_exhaust_the_read_executor(tmp_path, monkeypatch):
+    slicer, app = make_app(tmp_path)
+    source = make_project(tmp_path / 'input.3mf')
+    started, release = threading.Event(), threading.Event()
+    native = slicer.slice_3mf
+
+    def slow(*args, **kwargs):
+        started.set()
+        if not release.wait(5):
+            raise TimeoutError('Test did not release the slice')
+        return native(*args, **kwargs)
+
+    monkeypatch.setattr(slicer, 'slice_3mf', slow)
+    asyncio.get_running_loop().set_default_executor(ThreadPoolExecutor(max_workers=2))
+    async with app.router.lifespan_context(app), client(app) as http:
+        async with session_at('http://testserver/mcp', httpx.ASGITransport(app=app)) as mcp:
+            pending = [asyncio.create_task(http.post('/api/v1/slices', json={'input_3mf': str(source)})),
+                       asyncio.create_task(mcp.call_tool('slice_3mf', {'input_3mf': str(source)})),
+                       asyncio.create_task(http.post('/api/v1/slices', json={'input_3mf': str(source)}))]
+            try:
+                for _ in range(100):
+                    if started.is_set():
+                        break
+                    await asyncio.sleep(0.01)
+                assert started.is_set()
+                await asyncio.sleep(0.05)
+                assert (await asyncio.wait_for(http.get('/health'), 1)).status_code == 200
+                status = result(await asyncio.wait_for(mcp.call_tool('engine_status', {'check_updates': False}), 1))
+                assert status['source_commit'] == '1' * 40
+            finally:
+                release.set()
+                await asyncio.gather(*pending)
+
+
+async def test_cancelled_caller_does_not_admit_another_slice_until_native_completion(tmp_path):
+    slicer, _ = make_app(tmp_path)
+    started, release, second_started = threading.Event(), threading.Event(), threading.Event()
+
+    def first_native():
+        started.set()
+        assert release.wait(5)
+        return 'first'
+
+    def second_native():
+        second_started.set()
+        return 'second'
+
+    first = asyncio.create_task(slicer.run_slice(first_native))
+    assert await asyncio.to_thread(started.wait, 2)
+    first.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await first
+    second = asyncio.create_task(slicer.run_slice(second_native))
+    try:
+        await asyncio.sleep(0.05)
+        assert not second_started.is_set()
+    finally:
+        release.set()
+        assert await asyncio.wait_for(second, 2) == 'second'
+
+
+@pytest.mark.parametrize('kind', ['source', 'gcode', 'props', 'lines'])
+async def test_response_uses_the_same_artifact_snapshot_that_was_verified(tmp_path, monkeypatch, kind):
+    from snapmaker_slicer_mcp import rest
+    slicer, app = make_app(tmp_path)
+    source = make_project(tmp_path / 'input.3mf')
+    async with app.router.lifespan_context(app), client(app) as http:
+        job = (await http.post('/api/v1/slices', json={'input_3mf': str(source), 'plate': 1})).json()
+        filename = {'source': 'source.3mf', 'gcode': 'plate_1.gcode',
+                    'props': 'props.json', 'lines': 'plate_1.gcode'}[kind]
+        artifact = slicer.root / 'runs' / job['job_id'] / filename
+        verified = artifact.read_bytes()
+        original = rest._artifact
+
+        def modified_after_verification(*args, **kwargs):
+            value = original(*args, **kwargs)
+            artifact.write_bytes(b'{"changed":true}\n')
+            return value
+
+        monkeypatch.setattr(rest, '_artifact', modified_after_verification)
+        if kind in ('gcode', 'lines'):
+            url = job['links']['plates']['1'][kind]
+        else:
+            url = job['links']['source_3mf' if kind == 'source' else 'props']
+        response = await http.get(url)
+        assert response.status_code == 200
+        if kind == 'lines':
+            assert response.json()['lines'] == verified.decode().splitlines()
+        else:
+            assert response.content == verified
+        assert response.headers['etag'] == '"' + hashlib.sha256(verified).hexdigest() + '"'
 
 
 @pytest.mark.parametrize('extra,status', [

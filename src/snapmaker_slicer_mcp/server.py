@@ -216,13 +216,13 @@ def build_server(slicer: Slicer, preset_dirs=()) -> FastMCP:
     async def slice_project(project_id: str, plate: int | None = None, force: bool = False,
                              allow_newer_file: bool = True) -> dict:
         """Slice the current working revision; omitted plate uses the selected plate, 0=all."""
-        return await asyncio.to_thread(editor.slice_project, project_id, plate, force, allow_newer_file)
+        return await slicer.run_slice(editor.slice_project, project_id, plate, force, allow_newer_file)
 
     @mcp.tool()
     async def apply_and_slice(project_id: str, changes: dict, plate: int | None = None,
                               expected_sha256: str | None = None) -> dict:
         """Edit working settings and force a fresh official native slice of the new revision."""
-        return await asyncio.to_thread(editor.apply_and_slice, project_id, changes, plate, expected_sha256)
+        return await slicer.run_slice(editor.apply_and_slice, project_id, changes, plate, expected_sha256)
 
     @mcp.tool()
     async def slice_3mf(input_3mf: str, plate: int = 0, force: bool = False, allow_newer_file: bool = True) -> dict:
@@ -234,7 +234,7 @@ def build_server(slicer: Slicer, preset_dirs=()) -> FastMCP:
         result/cache identity; disable it for strict version checking.
         No GUI or printer access.
         """
-        return await asyncio.to_thread(slicer.slice_3mf, input_3mf, plate, force, allow_newer_file)
+        return await slicer.run_slice(slicer.slice_3mf, input_3mf, plate, force, allow_newer_file)
 
     @mcp.tool()
     async def recover_3mf(gcode_file: str) -> dict:

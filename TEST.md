@@ -12,7 +12,7 @@ uv run pytest tests -q
 uv build
 ```
 
-The extraction baseline at `6e56b1f` passed **240 tests with 1 skip**. The integrated 0.3.0 suite passed **267 tests with 1 skip** on macOS/Python 3.12. HTTP tests use real ASGI/TCP transports, including three simultaneous clients; native algorithms remain process doubles in this public suite.
+The extraction baseline at `6e56b1f` passed **240 tests with 1 skip**. The integrated 0.3.0 suite passed **267 tests with 1 skip** on macOS/Python 3.12. The 0.4.0 REST/MCP suite adds authenticated REST requests, byte-verified downloads, shared cache, concurrent admission and cancellation coverage. HTTP tests use real ASGI/TCP transports, including three simultaneous clients; native algorithms remain process doubles in this public suite.
 
 Tests use small process doubles at the native boundary to exercise source/revision preservation, stable IDs and component payloads, configuration codecs, atomic edits, stale SHA rejection, cache corruption, timeouts, recovery, preset inheritance/drafts, flow segments, settings metadata and MCP protocol behavior. These tests do not run the real slicing algorithms.
 

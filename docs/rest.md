@@ -62,6 +62,8 @@ This release has **synchronous submission**, not a 202 async queue or progress s
 
 Artifact responses carry a SHA-256 ETag and `Cache-Control: private, no-store`. Missing/changed artifacts or symlinked artifact paths fail explicitly. The service reconstructs canonical artifact locations; stored absolute paths and arbitrary client filenames are not download authority. A job manifest is metadata; its200 response alone does not attest the current integrity of every artifact. Artifact reads verify the requested bytes.
 
+Source, G-code and properties downloads preserve the stored bytes, so their body hashes equal the manifest hashes and ETags. The lines endpoint uses the full source G-code hash as its ETag, rather than the hash of its bounded JSON response. Reads use a verified temporary snapshot on the artifact volume; concurrent filesystem changes cannot replace the bytes being sent. Downloads need temporary disk space roughly equal to the requested artifact size. Slice admission is shared by REST and MCP without filling the executor used by read operations.
+
 Source download is recovery of a retained input, not reconstruction of a mesh from arbitrary G-code. Global/per-plate property exports do not exhaustively describe every final per-region override. Keep the returned engine/source identities when attaching downloaded output to a print job.
 
 ## Errors

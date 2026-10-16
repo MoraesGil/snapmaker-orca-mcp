@@ -1,6 +1,7 @@
 """One native slicing operation, immutable artifacts and source recovery."""
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import itertools
 import json
@@ -78,6 +79,16 @@ class Slicer:
         (self.root / "runs").mkdir(parents=True, exist_ok=True)
         (self.root / "cache").mkdir(exist_ok=True)
         self._lock = threading.Lock()
+        self._admission = asyncio.Lock()
+
+    async def run_slice(self, function, *args, **kwargs):
+        """Queue adapter calls without occupying threads needed by read operations."""
+        await self._admission.acquire()
+        pending = asyncio.create_task(asyncio.to_thread(function, *args, **kwargs))
+        # A disconnected caller must not release admission while its native
+        # process is still running. The thread's completion releases the gate.
+        pending.add_done_callback(lambda completed: self._admission.release())
+        return await asyncio.shield(pending)
 
     def job(self, job_id: str) -> dict:
         if not re.fullmatch(r"[0-9a-f]{32}", job_id):

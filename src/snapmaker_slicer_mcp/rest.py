@@ -1,17 +1,19 @@
 """REST adapters over the same native slicer used by MCP."""
 import asyncio
+import hashlib
+import io
+import itertools
 import json
 import re
+import tempfile
 import zipfile
 from functools import wraps
 from importlib.metadata import version
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.exceptions import HTTPException
-from starlette.responses import FileResponse, JSONResponse
+from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
-
-from .engine import file_hash
 
 PREFIX = '/api/v1'
 PRIVATE = {'Cache-Control': 'private, no-store'}
@@ -83,13 +85,54 @@ def _artifact(slicer, job_id, kind, plate=None):
         path, expected = slicer.root / 'runs' / job_id / 'source.3mf', job['source']['sha256']
     else:
         path, expected = slicer.root / 'runs' / job_id / 'props.json', job['props_sha256']
+    snapshot = tempfile.TemporaryFile(dir=path.parent)
     try:
-        intact = path.resolve() == path and path.is_file() and file_hash(path) == expected
-    except OSError:
-        intact = False
-    if not intact:
-        _fail(409, 'artifact_conflict', 'Retained artifact is missing, changed or a symlink')
-    return path, expected
+        digest = hashlib.sha256()
+        try:
+            if path.resolve() != path or not path.is_file():
+                _fail(409, 'artifact_conflict', 'Retained artifact is missing or a symlink')
+            with path.open('rb') as source:
+                for chunk in iter(lambda: source.read(1024 * 1024), b''):
+                    snapshot.write(chunk)
+                    digest.update(chunk)
+        except OSError:
+            _fail(409, 'artifact_conflict', 'Retained artifact is unavailable')
+        if digest.hexdigest() != expected:
+            _fail(409, 'artifact_conflict', 'Retained artifact changed')
+        size = snapshot.tell()
+        snapshot.seek(0)
+        return snapshot, expected, path.name, size
+    except BaseException:
+        snapshot.close()
+        raise
+
+
+class _SnapshotResponse(StreamingResponse):
+    def __init__(self, snapshot, **kwargs):
+        self.snapshot = snapshot
+        super().__init__(iter(lambda: snapshot.read(64 * 1024), b''), **kwargs)
+
+    async def __call__(self, scope, receive, send):
+        try:
+            await super().__call__(scope, receive, send)
+        finally:
+            self.snapshot.close()
+
+
+def _properties(snapshot):
+    with snapshot:
+        contents = snapshot.read()
+        try:
+            json.loads(contents)
+        except (ValueError, UnicodeDecodeError):
+            _fail(409, 'artifact_conflict', 'Stored properties are invalid')
+        return contents
+
+
+def _lines(snapshot, job_id, plate, start, count):
+    with io.TextIOWrapper(snapshot, encoding='utf-8', errors='replace') as stream:
+        lines = [line.rstrip('\r\n') for line in itertools.islice(stream, start - 1, start - 1 + count)]
+    return {'job_id': job_id, 'plate': plate, 'start_line': start, 'lines': lines}
 
 
 def _linked(job):
@@ -150,9 +193,11 @@ def rest_routes(slicer):
         except ValueError as error:
             _fail(409, 'engine_conflict', str(error))
 
-    async def engine_call(function, **kwargs):
+    async def engine_call(function, *, slicing=False, **kwargs):
         await verify_engine()
         try:
+            if slicing:
+                return await slicer.run_slice(function, **kwargs)
             return await asyncio.to_thread(function, **kwargs)
         except ValueError:
             # Native verification can detect a change after the initial check.
@@ -170,7 +215,7 @@ def rest_routes(slicer):
         except ValidationError as error:
             return JSONResponse({'error': {'code': 'invalid_request',
                                 'details': error.errors(include_input=False, include_url=False)}}, 422, headers=PRIVATE)
-        job = await engine_call(slicer.slice_3mf, **options.model_dump())
+        job = await engine_call(slicer.slice_3mf, slicing=True, **options.model_dump())
         return JSONResponse(_linked(job), headers=PRIVATE)
 
     @_endpoint
@@ -182,16 +227,15 @@ def rest_routes(slicer):
         @_endpoint
         async def download(request):
             plate = _integer(request.path_params['plate'], 'plate') if kind == 'gcode' else None
-            path, digest = await asyncio.to_thread(_artifact, slicer, request.path_params['job_id'], kind, plate)
+            snapshot, digest, filename, size = await asyncio.to_thread(
+                _artifact, slicer, request.path_params['job_id'], kind, plate)
             headers = {**PRIVATE, 'ETag': '"' + digest + '"'}
             if kind == 'props':
-                try:
-                    value = await asyncio.to_thread(lambda: json.loads(path.read_text()))
-                except (OSError, ValueError):
-                    _fail(409, 'artifact_conflict', 'Stored properties are invalid')
-                return JSONResponse(value, headers=headers)
-            return FileResponse(path, media_type='text/x.gcode' if kind == 'gcode' else 'model/3mf',
-                                filename=path.name, headers=headers)
+                contents = await asyncio.to_thread(_properties, snapshot)
+                return Response(contents, media_type='application/json', headers=headers)
+            headers.update({'Content-Length': str(size), 'Content-Disposition': f'attachment; filename="{filename}"'})
+            return _SnapshotResponse(snapshot, media_type='text/x.gcode' if kind == 'gcode' else 'model/3mf',
+                                     headers=headers)
         return download
 
     @_endpoint
@@ -202,8 +246,8 @@ def rest_routes(slicer):
         count = _integer(request.query_params.get('count', '200'), 'count')
         if count > 1000:
             _fail(400, 'invalid_range', 'count must be between 1 and 1000')
-        _, digest = await asyncio.to_thread(_artifact, slicer, job_id, 'gcode', plate)
-        value = await asyncio.to_thread(slicer.read_lines, job_id, plate, start, count)
+        snapshot, digest, _, _ = await asyncio.to_thread(_artifact, slicer, job_id, 'gcode', plate)
+        value = await asyncio.to_thread(_lines, snapshot, job_id, plate, start, count)
         return JSONResponse(value, headers={**PRIVATE, 'ETag': '"' + digest + '"'})
 
     @_endpoint
