@@ -12,7 +12,7 @@ uv run pytest tests -q
 uv build
 ```
 
-The extraction baseline at `6e56b1f` passed **240 tests with 1 skip**. The integrated 0.3.0 suite passed **267 tests with 1 skip** on macOS/Python 3.12. The 0.4.0 REST/MCP suite adds authenticated REST requests, byte-verified downloads, shared cache, concurrent admission and cancellation coverage. HTTP tests use real ASGI/TCP transports, including three simultaneous clients; native algorithms remain process doubles in this public suite.
+The extraction baseline at `6e56b1f` passed **240 tests with 1 skip**. The integrated 0.3.0 suite passed **267 tests with 1 skip** on macOS/Python 3.12. The 0.4.0 suite passed **305 tests with 1 skip** in the same Python environment. REST/MCP tests add authenticated requests, byte-verified downloads, shared cache, concurrent admission and cancellation coverage. HTTP tests use real ASGI/TCP transports, including three simultaneous clients; native algorithms remain process doubles in this public suite.
 
 Tests use small process doubles at the native boundary to exercise source/revision preservation, stable IDs and component payloads, configuration codecs, atomic edits, stale SHA rejection, cache corruption, timeouts, recovery, preset inheritance/drafts, flow segments, settings metadata and MCP protocol behavior. These tests do not run the real slicing algorithms.
 
@@ -56,6 +56,20 @@ Four locally installed material presets resolved. One local process preset refer
 Two fresh slices of the same input on the same installed backend produced different command ordering, despite identical native settings and engine identity. Timestamp changes alone do not explain those differences. Exact output-byte preservation applies to retained, hash-verified artifacts; fresh-slice byte determinism is not claimed.
 
 The HTTP process-double suite and installed native acceptance answer different questions. Authentication/liveness success alone does not establish that a particular 3MF slices correctly.
+
+## Shared REST and MCP acceptance (0.4.0)
+
+Installed acceptance on 2026-10-16 replaced the single 0.3.0 container with 0.4.0, retaining its URL, bearer token, read-only source/preset mounts, persistent data and the exact native executable/resource hashes above. The environment remained Ubuntu 24.04 amd64, emulated on macOS ARM64 with 4 CPUs / 8 GiB. All 13 installed Python/catalog files matched the tested source.
+
+- Three SDK connections using the exact saved Codex, Claude Code and Cursor URL/credentials each initialized and listed 33 tools and three resource templates.
+- A forced REST slice produced fresh G-code. MCP reused its verified cache/job. A second forced slice through MCP was subsequently reused by REST, confirming the shared backend/cache in both directions.
+- G-code, source and properties download bytes matched their manifest SHA-256 and ETags. Bounded lines matched the G-code; MCP resources and retained REST manifests were readable.
+- Missing/wrong bearer and disallowed Origins were rejected. Authenticated OpenAPI reported version0.4.0 and all eight paths; the service log contained no bearer-token value.
+- Exactly one backend remained running and healthy. The private input, historical source fixture and all five canonical preset files kept their before/after hashes.
+
+The test used a private working revision of the historical fixture with all auxiliary-fan cells set to zero, without changing the historical source or canonical presets. Its input SHA-256 was `4f3c0ebf6259d0dcb8ee6995fef4312e32d32f8ca126066bc3aa07eacea3f432`. Native properties confirmed zero auxiliary-fan values, and explicit `M106 P2` commands in both outputs did not enable it.
+
+For this small input, REST took **3.93 s** end to end (**3.24 s** native); the second MCP slice took **3.22 s** natively. Verified cross-protocol cache requests took **0.16 s** and **0.14 s**. These are input-specific observations, not a general benchmark, token comparison or GUI/physical-equivalence certification. The native algorithms and canonical presets were unchanged.
 
 ## What remains outside the evidence
 
