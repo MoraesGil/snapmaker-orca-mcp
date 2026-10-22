@@ -54,6 +54,10 @@ def main():
              'cases':{key:{'status':'not_run'} for key in sorted(EXPECTED)}}
     # Truncate any earlier evidence BEFORE dispatch, even when pytest selects no fixture.
     report.write_text(json.dumps(initial,indent=2)+'\n')
+    if a.all_tests and os.environ.get('PYTEST_ADDOPTS', ''):
+        initial.update(status='fail',reason='--all-tests requires empty inherited PYTEST_ADDOPTS')
+        report.write_text(json.dumps(initial,indent=2)+'\n')
+        p.error('--all-tests requires empty inherited PYTEST_ADDOPTS')
     if not (Path(a.app)/'Contents/MacOS/Snapmaker_Orca').is_file():
         initial.update(status='fail',reason='required native engine absent')
         report.write_text(json.dumps(initial,indent=2)+'\n')
@@ -63,7 +67,8 @@ def main():
              SNAPMAKER_NATIVE_COMMIT=a.source_commit,SNAPMAKER_NATIVE_REPORT=str(report),
              SNAPMAKER_NATIVE_RUN_ID=initial['run_id'],SNAPMAKER_NATIVE_TEST_COMMIT=source_commit,
              PYTHONPATH=os.pathsep.join((str(root/'src'),str(root/'tests'))))
-    result=subprocess.run([sys.executable,'-m','pytest',test_target,'-q','--basetemp',str(report.parent/'native-pytest'),
+    result=subprocess.run([sys.executable,'-m','pytest',test_target,'-q',
+                           *(['-o','addopts='] if a.all_tests else []),'--basetemp',str(report.parent/'native-pytest'),
                            '--junitxml',str(report.with_suffix('.xml'))],cwd=root,env=env)
     try:
         data=json.loads(report.read_text())

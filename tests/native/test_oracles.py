@@ -70,6 +70,35 @@ def test_required_runner_rejects_old_pass_when_selection_omits_native_fixture(tm
     assert not fresh.get('engine')
     assert all(case['status']=='not_run' for case in fresh['cases'].values())
 
+def test_all_tests_rejects_inherited_selection_before_native_dispatch(tmp_path):
+    import json
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+    from .harness import CASES, COMMIT
+    runner=Path(__file__).resolve().parents[2]/'scripts/run_native_regressions.py'
+    app=tmp_path/'Public synthetic placeholder.app'
+    binary=app/'Contents/MacOS/Snapmaker_Orca'
+    binary.parent.mkdir(parents=True)
+    binary.write_text('not an engine: must never be dispatched')
+    report=tmp_path/'stale-pass.json'
+    report.write_text(json.dumps({'run_id':'old-run','status':'pass',
+        'engine':{'source_commit':COMMIT},
+        'cases':{key:{'status':'pass'} for key in [*CASES,'modifier']}}))
+    result=subprocess.run([sys.executable,str(runner),'--all-tests','--app',str(app),
+        '--source-commit',COMMIT,'--report',str(report)],
+        env=dict(os.environ,PYTEST_ADDOPTS='-k test_real_native'),capture_output=True,text=True)
+    fresh=json.loads(report.read_text())
+    assert result.returncode==2, result.stderr
+    assert 'PYTEST_ADDOPTS' in result.stderr
+    assert fresh['status']=='fail'
+    assert 'PYTEST_ADDOPTS' in fresh['reason']
+    assert fresh['run_id']!='old-run'
+    assert not fresh.get('engine') and not fresh.get('engine_run_id')
+    assert all(case['status']=='not_run' for case in fresh['cases'].values())
+    assert not report.with_suffix('.xml').exists(), 'pytest must not be launched'
+
 def test_observer_rejects_relative_xyz_and_extruding_arcs():
     import pytest
     for text in ('G91\nG1 X1 E1', 'M83\nG2 X1 I.5 E.2', 'M83\nG3 I1 E.2'):
