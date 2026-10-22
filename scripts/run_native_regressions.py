@@ -42,11 +42,14 @@ def main():
     p.add_argument('--app',default='/Applications/Snapmaker Orca.app')
     p.add_argument('--source-commit',required=True,help='operator-declared 40-character source commit')
     p.add_argument('--report',default='.temp/native-regressions.json')
+    p.add_argument('--all-tests',action='store_true',help='Run the complete repository suite with native cases required')
     a=p.parse_args();root=Path(__file__).resolve().parents[1];report=Path(a.report).resolve()
     report.parent.mkdir(parents=True,exist_ok=True)
     source_commit=subprocess.run(['git','rev-parse','HEAD'],cwd=root,capture_output=True,text=True,check=True).stdout.strip()
     source_dirty=bool(subprocess.run(['git','status','--porcelain'],cwd=root,capture_output=True,text=True,check=True).stdout)
+    test_target='tests' if a.all_tests else 'tests/native'
     initial={'run_id':uuid.uuid4().hex,'status':'pending','test_source_commit':source_commit,'test_source_dirty':source_dirty,
+             'test_target':test_target,'junit_report':str(report.with_suffix('.xml')),
              'requested_engine':{'app':str(Path(a.app).resolve()),'source_commit':a.source_commit},
              'cases':{key:{'status':'not_run'} for key in sorted(EXPECTED)}}
     # Truncate any earlier evidence BEFORE dispatch, even when pytest selects no fixture.
@@ -60,7 +63,8 @@ def main():
              SNAPMAKER_NATIVE_COMMIT=a.source_commit,SNAPMAKER_NATIVE_REPORT=str(report),
              SNAPMAKER_NATIVE_RUN_ID=initial['run_id'],SNAPMAKER_NATIVE_TEST_COMMIT=source_commit,
              PYTHONPATH=os.pathsep.join((str(root/'src'),str(root/'tests'))))
-    result=subprocess.run([sys.executable,'-m','pytest','tests/native','-q','--basetemp',str(report.parent/'native-pytest')],cwd=root,env=env)
+    result=subprocess.run([sys.executable,'-m','pytest',test_target,'-q','--basetemp',str(report.parent/'native-pytest'),
+                           '--junitxml',str(report.with_suffix('.xml'))],cwd=root,env=env)
     try:
         data=json.loads(report.read_text())
         if not isinstance(data,dict): raise ValueError('Invalid report')

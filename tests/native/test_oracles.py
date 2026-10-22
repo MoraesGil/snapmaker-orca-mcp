@@ -1,4 +1,5 @@
 from .harness import box_mesh, observe
+import pytest
 
 def test_closed_box_has_each_edge_twice():
     vertices, faces=box_mesh((0,0,0),(2,3,4))
@@ -42,7 +43,8 @@ def test_required_runner_errors_and_writes_failure_for_missing_engine(tmp_path):
     assert result.returncode!=0
     assert json.loads(report.read_text())['status']=='fail'
 
-def test_required_runner_rejects_old_pass_when_selection_omits_native_fixture(tmp_path):
+@pytest.mark.parametrize('all_tests', [False, True])
+def test_required_runner_rejects_old_pass_when_selection_omits_native_fixture(tmp_path, all_tests):
     import json
     import os
     import subprocess
@@ -57,7 +59,10 @@ def test_required_runner_rejects_old_pass_when_selection_omits_native_fixture(tm
     report=tmp_path/'stale-pass.json'
     report.write_text(json.dumps({'run_id':'old-run','status':'pass','engine':{'source_commit':COMMIT},'cases':{key:{'status':'pass'} for key in [*CASES,'modifier']}}))
     env=dict(os.environ,PYTEST_ADDOPTS='-k test_closed_box')
-    result=subprocess.run([sys.executable,str(runner),'--app',str(app),'--source-commit',COMMIT,'--report',str(report)],env=env,capture_output=True,text=True)
+    command=[sys.executable,str(runner),'--app',str(app),'--source-commit',COMMIT,'--report',str(report)]
+    if all_tests:
+        command.append('--all-tests')
+    result=subprocess.run(command,env=env,capture_output=True,text=True)
     fresh=json.loads(report.read_text())
     assert result.returncode!=0, 'Selecting no native cases must not reuse an older passing report'
     assert fresh['status']=='fail'

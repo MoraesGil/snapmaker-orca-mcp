@@ -14,13 +14,13 @@ uv run pytest tests -q
 uv build
 ```
 
-Public tests use native-boundary process doubles and the four attributed public preset fixtures. The optional private geometry fixture skips when absent. You do not need the old fork, a native source checkout or a printer to run the public suite.
+Public engine-independent tests use native-boundary process doubles and the four attributed public preset fixtures. The optional private geometry fixture skips when absent. Real native tests are opt-in; the required all-tests runner uses generated public geometry and an explicitly selected installed app. See [property regressions](docs/property-regressions.md). You do not need the old fork, a native source checkout or a printer to run the regular public suite.
 
 Real-engine acceptance needs your own complete saved 3MF and a deliberately obtained/bound official runtime. Follow [LINUX.md](LINUX.md) and distinguish those results from unit/protocol tests in your report.
 
 ## Keep changes focused
 
-- Preserve the 33 existing tools, three resource templates and default stdio behavior unless the proposed change explicitly addresses their contract.
+- Preserve the existing tool contracts, three resource templates and default stdio behavior unless the proposed change explicitly addresses their contract. This branch exposes 34 tools including `add_modifier`; update discovery assertions deliberately for API additions.
 - Keep input projects, installed presets and canonical `_GENERIC` sources read-only. Mutations belong in private project revisions or artifact-local drafts.
 - Preserve component payloads, painting, stable IDs, native vector shapes and source/revision provenance. A failed edit batch must not commit a partial revision.
 - Keep shared HTTP clients on one authenticated backend. Native slicing should not block unrelated project-state reads.
