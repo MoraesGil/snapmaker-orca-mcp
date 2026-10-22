@@ -140,4 +140,4 @@ The service tests use native-boundary fixtures; optional tests can exercise a
 separately installed official engine. Local benchmarks and customer models do
 not belong in the public repository.
 
-[AGPLv3 license](LICENSE)
+[AGPLv3 license](LICENSE.txt)

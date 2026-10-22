@@ -48,6 +48,36 @@ Review and merge five property branches into the integration branch, run their
 combined tests, then remove only clean worktrees whose commits are merged.
 The final integration runs the entire suite on the integration branch.
 
+## Reproduce the integration
+
+```sh
+uv sync --frozen --extra test
+mkdir -p .temp
+uv run --frozen --extra test pytest tests -q --junitxml=.temp/regression-suite.xml
+
+uv run --frozen --extra test python scripts/run_native_regressions.py \
+  --app "/Applications/Snapmaker Orca.app" \
+  --source-commit 9bf2f18eaff7cc0655cbdeef6a215660085ecb0f \
+  --report .temp/native-regressions.json
+
+uv run --frozen python scripts/property_coverage.py \
+  --junit .temp/regression-suite.xml \
+  --native-report .temp/native-regressions.json > .temp/property-coverage.json
+```
+
+The regular suite is engine-independent: real native cases are explicitly
+skipped unless selected. The required native runner enables them and refuses
+missing-engine or incomplete/skipped results. It records the Git revision,
+measured executable/resource hashes, declared native source, app version and
+per-case scope. It does not install or switch the slicer, call a running MCP
+service, use private models or send jobs to a printer.
+
+Keep both reports. `property_coverage.py` attributes native property results
+only from the explicit successful runner report for the matching schema source
+commit; JUnit test names alone are not semantic attribution. Failed/unexecuted
+cases remain missing. Auxiliary-fan evidence is specifically **OFF-only**;
+other geometries, values and combinations require additional fixtures.
+
 ## Modifier coordinates and scope
 
 `add_modifier` adds an axis-aligned box with `center=[x,y,z]` and
