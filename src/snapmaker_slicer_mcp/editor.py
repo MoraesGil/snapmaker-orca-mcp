@@ -206,7 +206,7 @@ class Editor:
                         result = project.set_config(normalized)
                     else:
                         result = project.set_object_config(changes=normalized, **operation)
-                elif name in ('duplicate_object', 'delete_object', 'transform_object', 'add_plate',
+                elif name in ('add_modifier', 'duplicate_object', 'delete_object', 'transform_object', 'add_plate',
                               'delete_plate', 'move_object_to_plate', 'set_height_range', 'reset_layer_height'):
                     result = getattr(project, name)(**operation)
                 elif name in ('arrange_plate', 'auto_orient'):
@@ -266,6 +266,11 @@ class Editor:
             self.slicer.engine.verify()
             write_json(directory / 'state.json', state)
             return {**state, 'requires_slice': True}
+
+    def add_modifier(self, project_id: str, object_id: int, center: list[float], dimensions: list[float],
+                     changes: dict, name="Modifier", expected_sha256=None):
+        return self.edit_project(project_id, [{"operation": "add_modifier", "object_id": object_id,
+            "center": center, "dimensions": dimensions, "changes": changes, "name": name}], expected_sha256)
 
     def set_config(self, project_id: str, changes: dict, expected_sha256=None, allow_custom_gcode=False):
         return self.edit_project(project_id, [{'operation': 'set_config', 'changes': changes}],
