@@ -130,6 +130,9 @@ and supported regional speed overrides. It is also available in an atomic
 
 ## Development
 
+Follow the [contribution workflow](contribution-workflow.md) for named worktrees,
+Conventional Commits, validation and pull requests.
+
 ```sh
 uv sync --frozen --extra test
 uv run pytest -q

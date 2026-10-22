@@ -19,6 +19,12 @@ before the final all-tests runner option was added. Eleven of the latter skips
 were the opt-in native cases; the other is the historical private fixture.
 These are recorded checkpoints, not a substitute for the final required run.
 
+The final required `--all-tests` run at clean wrapper commit `8bad03f` passed
+**1,271 tests with 1 skip** in 108.35 seconds. All eleven native cases ran,
+using 22 fresh slice jobs; the only skip was the absent historical private
+fixture. The paired JSON/JUnit reports remain local. Subsequent contribution
+documentation does not extend the native property coverage described below.
+
 The native harness generates closed public geometry and an overhang fixture,
 resolving only official installed U1/PLA presets. It has paired semantic cases
 for outer/inner wall speed, layer height, wall loops, infill density, support

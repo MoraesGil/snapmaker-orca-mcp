@@ -103,7 +103,7 @@ Drain and stop the old slicing backend before sharing its artifact store with a
 native server. Preserve artifacts and private client tokens, then change the MCP
 client URL and reload that connection.
 
-Use host paths such as `/Users/name/models/project.3mf` or `/Volumes/drive/...`.
+Use real host paths; replace `/path/to/projects/model.3mf` with the existing absolute path of your project.
 Container mount aliases such as `/input/files`, `/input/user` and `/artifacts`
 are not native macOS filesystem paths. Retained editing-state files that contain
 absolute container paths need a hash-checked migration before reopening those
