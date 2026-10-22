@@ -41,3 +41,58 @@ def test_required_runner_errors_and_writes_failure_for_missing_engine(tmp_path):
     result=subprocess.run([sys.executable,str(runner),'--app',str(tmp_path/'absent.app'),'--source-commit','9bf2f18eaff7cc0655cbdeef6a215660085ecb0f','--report',str(report)],capture_output=True,text=True)
     assert result.returncode!=0
     assert json.loads(report.read_text())['status']=='fail'
+
+def test_required_runner_rejects_old_pass_when_selection_omits_native_fixture(tmp_path):
+    import json
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+    from .harness import CASES,COMMIT
+    runner=Path(__file__).resolve().parents[2]/'scripts/run_native_regressions.py'
+    app=tmp_path/'Public synthetic placeholder.app'
+    binary=app/'Contents/MacOS/Snapmaker_Orca'
+    binary.parent.mkdir(parents=True)
+    binary.write_text('not executed: this test selects only a pure geometry oracle')
+    report=tmp_path/'stale-pass.json'
+    report.write_text(json.dumps({'run_id':'old-run','status':'pass','engine':{'source_commit':COMMIT},'cases':{key:{'status':'pass'} for key in [*CASES,'modifier']}}))
+    env=dict(os.environ,PYTEST_ADDOPTS='-k test_closed_box')
+    result=subprocess.run([sys.executable,str(runner),'--app',str(app),'--source-commit',COMMIT,'--report',str(report)],env=env,capture_output=True,text=True)
+    fresh=json.loads(report.read_text())
+    assert result.returncode!=0, 'Selecting no native cases must not reuse an older passing report'
+    assert fresh['status']=='fail'
+    assert fresh['run_id']!='old-run'
+    assert not fresh.get('engine')
+    assert all(case['status']=='not_run' for case in fresh['cases'].values())
+
+def test_observer_rejects_relative_xyz_and_extruding_arcs():
+    import pytest
+    for text in ('G91\nG1 X1 E1', 'M83\nG2 X1 I.5 E.2', 'M83\nG3 I1 E.2'):
+        with pytest.raises(ValueError,match='Unsupported native regression motion'):
+            observe(text)
+
+def test_observer_allows_nonextruding_arc_endpoint_updates():
+    result=observe('M83\nG3 X2 Z1 I1 F3000\nG1 X4 E.2 F1200')
+    assert result['moves'][0]['length']==2
+    assert result['moves'][0]['z']==1
+
+def test_required_completion_requires_current_identity_and_each_case_run_id():
+    import copy
+    import runpy
+    from pathlib import Path
+    runner=runpy.run_path(str(Path(__file__).resolve().parents[2]/'scripts/run_native_regressions.py'))
+    initial={'run_id':'current','test_source_commit':'a'*40,'requested_engine':{'app':'/public/synthetic.app','source_commit':'b'*40}}
+    data={**initial,'engine_run_id':'current','engine':{
+        'source_commit':'b'*40,'native_version':'2.4.1','executable_sha256':'c'*64,'resources_sha256':'d'*64,
+        'executable':'/public/synthetic.app/Contents/MacOS/Snapmaker_Orca','resources':'/public/synthetic.app/Contents/Resources'},
+        'cases':{key:{'status':'pass','run_id':'current'} for key in runner['EXPECTED']}}
+    assert runner['complete'](data,initial)
+    for field in ('run_id','engine_run_id','test_source_commit'):
+        bad=copy.deepcopy(data);bad[field]='old'
+        assert not runner['complete'](bad,initial)
+    for field in ('source_commit','executable','resources','executable_sha256','resources_sha256','native_version'):
+        bad=copy.deepcopy(data);bad['engine'][field]='old'
+        assert not runner['complete'](bad,initial)
+    for key in runner['EXPECTED']:
+        bad=copy.deepcopy(data);bad['cases'][key]['run_id']='old'
+        assert not runner['complete'](bad,initial)

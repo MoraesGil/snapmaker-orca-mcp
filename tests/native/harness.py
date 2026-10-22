@@ -42,7 +42,11 @@ def make_project(path, config, overhang=False):
     return path
 
 def observe(text):
-    """Track modal feedrate, XY/Z and relative/absolute extrusion on real moves."""
+    """Observe absolute XYZ linear extrusion only; reject G91/extruding arcs.
+
+    Nonextruding arc endpoints update modal state but never count as path length.
+    This deliberately bounded oracle is not a general CNC interpreter.
+    """
     feature=''; pos={'X':0.,'Y':0.,'Z':0.,'E':0.}; feed=0.; relative=False; moves=[]; commands=[]
     for line in text.splitlines():
         if line.startswith(('; FEATURE:', ';TYPE:')): feature=line.split(':',1)[1].strip()
@@ -50,12 +54,15 @@ def observe(text):
         if not code: continue
         parts=code.split(); op=parts[0]; vals={m.group(1):float(m.group(2)) for p in parts[1:] if (m:=re.fullmatch(r'([A-Z])(-?(?:\d+(?:\.\d*)?|\.\d+))',p))}
         commands.append((op,vals))
+        if op=='G91': raise ValueError('Unsupported native regression motion: relative XYZ (G91)')
         if op=='M83': relative=True
         if op=='M82': relative=False
         if op=='G92': pos.update({k:v for k,v in vals.items() if k in pos})
         if op not in ('G0','G1','G2','G3'): continue
         feed=vals.get('F',feed); new={k:vals.get(k,v) for k,v in pos.items()}
         extrusion=vals.get('E',0) if relative else new['E']-pos['E']
+        if op in ('G2','G3') and extrusion>0:
+            raise ValueError('Unsupported native regression motion: extruding arc (G2/G3)')
         distance=math.hypot(new['X']-pos['X'],new['Y']-pos['Y'])
         if extrusion>0 and distance>0:
             moves.append({'feature':feature,'x':new['X'],'y':new['Y'],'z':new['Z'],'f':feed,'length':distance,'e':extrusion})
