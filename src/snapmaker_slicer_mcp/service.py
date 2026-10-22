@@ -168,6 +168,8 @@ class Slicer:
             validate_project(snapshot)
             datadir = job / "native-data"
             datadir.mkdir()
+            native_tmp = job / "native-tmp"
+            native_tmp.mkdir()
             argv = [str(self.engine.executable), "--slice", str(plate), "--outputdir", str(job),
                     "--datadir", str(datadir), "--export-settings", str(job / "native-settings.json"), str(snapshot)]
             if allow_newer_file:
@@ -176,25 +178,29 @@ class Slicer:
                 "DISPLAY", "WAYLAND_DISPLAY", "SNAPMAKER_ORCA_ALLOW_NEWER_FILE"
             )}
             env["LC_ALL"] = "C"
+            env["TMPDIR"] = str(native_tmp) + os.sep
             run = {"job_id": job_id, "engine": self.engine.identity(), "argv": argv,
                    "source_sha256": source_hash, "requested_plate": plate,
                    "compatibility_flags": {"allow_newer_file": allow_newer_file}}
             write_json(job / "request.json", run)
             self.engine.verify()
             native_start = time.perf_counter()
-            with (job / "engine.log").open("w") as log:
-                process = subprocess.Popen(argv, cwd=job, env=env, stdout=log, stderr=subprocess.STDOUT,
-                                           start_new_session=(os.name != "nt"))
-                try:
-                    code = process.wait(timeout=self.timeout)
-                except subprocess.TimeoutExpired as error:
-                    if os.name == "nt":
-                        process.kill()
-                    else:
-                        os.killpg(process.pid, signal.SIGKILL)
-                    process.wait()
-                    write_json(job / "failure.json", {**run, "reason": "timeout", "log_path": str(job / "engine.log")})
-                    raise TimeoutError(f"Native slice timed out; diagnostics: {job}") from error
+            try:
+                with (job / "engine.log").open("w") as log:
+                    process = subprocess.Popen(argv, cwd=job, env=env, stdout=log, stderr=subprocess.STDOUT,
+                                               start_new_session=(os.name != "nt"))
+                    try:
+                        code = process.wait(timeout=self.timeout)
+                    except subprocess.TimeoutExpired as error:
+                        if os.name == "nt":
+                            process.kill()
+                        else:
+                            os.killpg(process.pid, signal.SIGKILL)
+                        process.wait()
+                        write_json(job / "failure.json", {**run, "reason": "timeout", "log_path": str(job / "engine.log")})
+                        raise TimeoutError(f"Native slice timed out; diagnostics: {job}") from error
+            finally:
+                shutil.rmtree(native_tmp)
             native_seconds = time.perf_counter() - native_start
             if code:
                 write_json(job / "failure.json", {**run, "exit_code": code, "log_path": str(job / "engine.log")})

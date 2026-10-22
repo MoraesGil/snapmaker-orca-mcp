@@ -44,6 +44,10 @@ a=p.parse_args()
 assert 'DISPLAY' not in os.environ and 'WAYLAND_DISPLAY' not in os.environ
 assert 'SNAPMAKER_ORCA_ALLOW_NEWER_FILE' not in os.environ
 out=pathlib.Path(a.outputdir)
+scratch=pathlib.Path(os.environ['TMPDIR'])
+print('NATIVE_TMPDIR='+str(scratch),flush=True)
+assert scratch.parent==out and scratch.is_dir()
+(scratch/'native-marker').write_text('temporary native work')
 mode=pathlib.Path(__file__).with_suffix('.mode')
 value=mode.read_text() if mode.exists() else ''
 if value=='sleep': time.sleep(10)
@@ -109,6 +113,51 @@ def test_failures_are_not_cached_and_timeouts_leave_diagnostics(tmp_path):
     with pytest.raises(TimeoutError): slicer.slice_3mf(str(source))
     assert not list((slicer.root / "cache").glob("*.json"))
     assert len(list((slicer.root / "runs").glob("*/engine.log"))) == 2
+
+
+@pytest.mark.parametrize('mode', ['', 'fail', 'sleep'])
+def test_native_temporaries_are_job_local_and_removed_after_every_exit(tmp_path, mode):
+    slicer, binary = boundary(tmp_path)
+    source = make_project(tmp_path / 'input.3mf')
+    original = source.read_bytes()
+    binary.with_suffix('.mode').write_text(mode)
+    if mode == 'sleep':
+        slicer.timeout = 1
+        expected_error = TimeoutError
+    else:
+        expected_error = RuntimeError if mode == 'fail' else None
+    if expected_error:
+        with pytest.raises(expected_error):
+            slicer.slice_3mf(str(source), plate=1, force=True)
+    else:
+        slicer.slice_3mf(str(source), plate=1, force=True)
+    jobs = list((slicer.root / 'runs').iterdir())
+    assert len(jobs) == 1
+    job = jobs[0]
+    assert 'NATIVE_TMPDIR=' + str(job / 'native-tmp') in (job / 'engine.log').read_text()
+    assert not (job / 'native-tmp').exists()
+    assert source.read_bytes() == original
+
+
+def test_native_temporaries_are_removed_when_process_cannot_launch(tmp_path, monkeypatch):
+    import snapmaker_slicer_mcp.service as service
+    slicer, _ = boundary(tmp_path)
+    source = make_project(tmp_path / 'input.3mf')
+    captured = []
+
+    def cannot_launch(*args, **kwargs):
+        scratch = Path(kwargs['env']['TMPDIR'])
+        assert scratch.name == 'native-tmp'
+        assert scratch.is_dir()
+        (scratch / 'native-marker').write_text('startup temporary work')
+        captured.append(scratch)
+        raise OSError('native launch unavailable')
+
+    monkeypatch.setattr(service.subprocess, 'Popen', cannot_launch)
+    with pytest.raises(OSError, match='native launch unavailable'):
+        slicer.slice_3mf(str(source), plate=1, force=True)
+    assert len(captured) == 1
+    assert not captured[0].exists()
 
 
 def test_source_recovery_requires_matching_gcode_and_intact_source(tmp_path):
