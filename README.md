@@ -12,6 +12,23 @@ returns its output and exits.
 
 This is an independent community project, not an official Snapmaker product.
 
+## Requirements and tested versions
+
+| Component | Requirement / recorded version |
+|---|---|
+| This MCP package | **0.4.0**; branch improvements are unreleased until published |
+| Native slicer | **Snapmaker Orca is required**, with its matching libraries and resources; the engine is not bundled with this Python package |
+| Pinned adapter and setting catalog | **Snapmaker Orca 2.4.1**, official source commit `9bf2f18eaff7cc0655cbdeef6a215660085ecb0f` |
+| Direct macOS slicing | Installed Snapmaker Orca + this repository's Bash script; Bash and system utilities are supplied by macOS |
+| MCP / REST | The same installed slicer + **Python 3.11+**, the project dependencies and MCP client configuration; the commands below use **uv** |
+
+The desktop app contains the native CLI executable. The GUI can remain closed.
+On macOS, neither Docker nor a separate Linux engine is required. Do not move
+the executable out of its app bundle or substitute another build silently.
+The declared source commit and measured binary/resource hashes identify the
+test target; a matching version string alone is insufficient. See [the actual
+validation record and platform limits](TEST.md).
+
 ## Slice once
 
 Install Snapmaker Orca, then:
@@ -94,6 +111,13 @@ retrieval; the direct Bash path is ephemeral.
 The optional service has additional project editing and output-reading tools.
 They are separate from the Bash slicing command. No GUI automation or automatic
 engine download/update is included.
+
+Use `load_model` → `set_config` / `edit_project` → `slice_project` to edit a
+private 3MF revision and regenerate G-code. Re-slice after every change.
+The catalog contains **699 extracted settings**; **91 of those keys
+lack extracted label/tooltip documentation**. Type validation, saved-3MF persistence and native G-code
+effects are separate checks. See [property regressions](docs/property-regressions.md)
+for named cases, upgrade checks and the coverage gaps.
 
 - [Native macOS and MCP setup](MACOS.md)
 - [MCP tools and usage](docs/usage.md)

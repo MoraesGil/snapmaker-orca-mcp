@@ -15,7 +15,7 @@
 - Parent `props_test_branch`; do not merge main, push or publish.
 - Workers: `gpt-6.1-sol`, reasoning `low`, fresh context, isolated worktrees and pytest basetemp.
 - Never write private sources, installed presets, engine assets, active client configuration or printer state.
-- 699 catalog settings and 91 unparsed keys are different populations; missing native evidence stays visible.
+- 699 catalog settings include 91 keys without label/tooltip documentation; missing native evidence stays visible.
 - No byte-determinism claims. Native tests inspect commands and actual geometry-related effects.
 - Preserve initial dirty native-macOS work; use only generated synthetic geometry in new native tests.
 
@@ -35,7 +35,7 @@ Interfaces: named cases use `key`, `batch`, `valid` (objects with `value`, `norm
 
 - [ ] Preserve and commit reviewed initial local changes on the parent.
 - [ ] Worker writes matrix/report tests, observes missing-framework failures, then implements independently.
-- [ ] Account for all 699 keys and policy rejections; preserve sources and unrelated ZIP payloads; report 91 unparsed keys.
+- [ ] Account for all 699 keys and policy rejections; preserve sources and unrelated ZIP payloads; report the 91 keys lacking extracted label/tooltip metadata without excluding them from typed coverage.
 - [ ] Run focused and full nonnative tests, review and integrate framework.
 
 ## Task 2: First five named properties

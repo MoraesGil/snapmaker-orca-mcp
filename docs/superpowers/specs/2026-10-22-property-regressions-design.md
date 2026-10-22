@@ -11,16 +11,16 @@ Make setting edits independently reproducible across engine upgrades. Distinguis
 - Initial checkout: main at `0b29df3`; local native-macOS changes were already present.
 - Baseline: 309 passed, 1 skipped; native boundaries in this public suite are doubles.
 - MCP package 0.4.0; schema Snapmaker Orca 2.4.1 / `9bf2f18eaff7cc0655cbdeef6a215660085ecb0f`.
-- 699 extracted settings and 91 explicitly unparsed keys; never call this every engine setting.
+- 699 extracted settings, including 91 missing extracted label/tooltip text (`unparsed_keys` is the legacy field name); do not claim every engine setting is covered without a source comparison.
 - No current add-modifier operation. Existing object/part settings can be changed.
 
 ## Regression layers
 
-1. A schema-wide contract matrix must account for every catalog key: valid value, invalid value, normalization, saved configuration and immutable source. Intentionally prohibited settings get rejection tests. Unparsed native keys are reported as unsupported, not passed.
+1. A schema-wide contract matrix must account for every catalog key: valid value, invalid value, normalization, saved configuration and immutable source. Intentionally prohibited settings get rejection tests. Missing documentation metadata is reported separately; these keys still receive normal type/3MF contract coverage.
 2. Named property cases live independently in `tests/property_cases/<key>.json`. The first two batches contain five properties each. Each worker owns one case file. A generic pytest runner checks validation, 3MF JSON and XML persistence, source preservation, stale-G-code invalidation, and atomic failure.
 3. Opt-in real-engine tests generate their own synthetic geometry and resolve only official installed presets. They must not depend on private models, a running server or credentials. Native absence is an explicit skip in the normal suite; the release integration command requires a real engine and cannot report success from skips.
 4. Native assertions examine relevant commands/movements (layer Z, feature feedrates, infill paths, temperature/fan commands, modifier inside/outside geometry), not whole-file equality or comments alone.
-5. A checked-in coverage manifest and report command name passed contract cases, native cases, blocked settings, unparsed keys and missing semantic native coverage. Adding schema keys requires a deliberate coverage update.
+5. A checked-in coverage manifest and report command name passed contract cases, native cases, blocked settings, undocumented catalog keys and missing semantic native coverage. Adding schema keys requires a deliberate coverage update.
 
 ## Modifier operation
 

@@ -83,7 +83,7 @@ async def test_slow_rest_slice_keeps_mcp_reads_and_health_available(tmp_path, mo
                 assert (await asyncio.wait_for(http.get('/health'), 1)).status_code == 200
                 status = result(await asyncio.wait_for(mcp.call_tool('engine_status', {'check_updates': False}), 1))
                 assert status['source_commit'] == '1' * 40
-                assert len((await mcp.list_tools()).tools) == 33
+                assert len((await mcp.list_tools()).tools) == 34
             finally:
                 release.set()
                 response = await pending
