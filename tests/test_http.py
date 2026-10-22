@@ -210,7 +210,7 @@ async def test_cli_tcp_serves_three_concurrent_mcp_clients_resources_and_recover
 
             async def client(index):
                 async with session_at(url + '/mcp', origin='https://trusted.example') as session:
-                    assert len((await session.list_tools()).tools) == 33
+                    assert len((await session.list_tools()).tools) == 34
                     assert len((await session.list_resource_templates()).resourceTemplates) == 3
                     await barrier.wait()
                     if index == 0:

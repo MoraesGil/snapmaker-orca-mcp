@@ -261,7 +261,7 @@ class Project:
             instances = [{"instance_id": i, "transform": _transform(e.get("transform")),
                           "plate": membership.get((oid, i)), "printable": e.get("printable", "1") != "0"}
                          for i, e in enumerate(self._items(oid))]
-            parts = [{"part_id": int(e.get("id")), "name": _metadata(e).get("name", ""), "config": _option_config(e)}
+            parts = [{"part_id": int(e.get("id")), "name": _metadata(e).get("name", ""), "subtype": e.get("subtype", "normal_part"), "config": _option_config(e)}
                      for e in _children(settings, "part")] if settings is not None else []
             result.append({"object_id": oid, "name": meta.get("name", obj.get("name", f"Object {oid}")),
                            "config": _option_config(settings) if settings is not None else {},
@@ -310,6 +310,90 @@ class Project:
             root = self._object_settings(object_id, create=True)
         for key, value in serialized.items():
             _set_metadata(root, key, value)
+
+    def add_modifier(self, object_id, center, dimensions, changes, name="Modifier"):
+        """Add a closed box in absolute object-local mm, shared by all instances."""
+        from .presets import validate_changes
+
+        if type(object_id) is not int:
+            raise ValueError("object_id must be an existing integer root ID")
+        obj = self._object(object_id)
+        if self.model.get("unit", "millimeter") != "millimeter":
+            raise ValueError("Modifiers require millimeter model units")
+        def xyz(value, label):
+            if (not isinstance(value, list) or len(value) != 3
+                    or any(type(v) not in (int, float) or not math.isfinite(v) for v in value)):
+                raise ValueError(f"{label} must contain three finite XYZ numbers")
+            return [float(v) for v in value]
+        center, dimensions = xyz(center, "center"), xyz(dimensions, "dimensions")
+        if any(v <= 0 for v in dimensions):
+            raise ValueError("dimensions must be strictly positive")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("name must be a nonempty string")
+        # Snapmaker9bf2f18 PrintConfig.hpp PrintRegionConfig1051..1116:
+        # these regional speed settings are ConfigOptionFloats, not scalars.
+        allowed = {"outer_wall_speed", "inner_wall_speed", "sparse_infill_speed",
+                   "top_surface_speed", "internal_solid_infill_speed"}
+        if not isinstance(changes, dict) or not changes or set(changes) - allowed:
+            raise ValueError("Modifier changes require supported regional speed keys")
+        if any(isinstance(v, list) and not v for v in changes.values()):
+            raise ValueError("Modifier speed arrays must not be empty")
+        normalized = validate_changes(changes, self.config)
+        serialized = {key: _native_option_value(key, value) for key, value in normalized.items()}
+        resources = self._resources()
+        used = {int(e.get("id")) for e in resources if e.get("id") is not None}
+        # Part IDs may reference external resources, whose numeric IDs must also
+        # remain unambiguous to the native model-settings importer.
+        used.update(int(e.get("id")) for e in self.settings.iter()
+                    if _local(e.tag) == "part" and e.get("id") is not None)
+        used.update(int(e.get("objectid")) for e in self.model.iter()
+                    if _local(e.tag) == "component" and e.get("objectid") is not None)
+        seed = max(used or {0}) + 1
+        mesh = _child(obj, "mesh")
+        components = _child(obj, "components")
+        if mesh is not None and components is not None:
+            raise ValueError("Root cannot contain both mesh and components")
+        if mesh is None and components is None:
+            raise ValueError("Root has no mesh or components")
+        settings = self._object_settings(object_id)
+        if mesh is not None and settings is not None:
+            parts = _children(settings, "part")
+            if any(e.get("id") != str(object_id) for e in parts) or len(parts) > 1:
+                raise ValueError("Direct mesh part metadata cannot be mapped unambiguously")
+        # Construct the complete new mesh before touching the existing trees.
+        modifier_id = seed + (mesh is not None)
+        volume = ET.Element(f"{{{CORE}}}object", {"id": str(modifier_id), "type": "model"})
+        box = ET.SubElement(volume, f"{{{CORE}}}mesh")
+        vertices = ET.SubElement(box, f"{{{CORE}}}vertices")
+        for x,y,z in ((-1,-1,-1),(1,-1,-1),(1,1,-1),(-1,1,-1),
+                      (-1,-1,1),(1,-1,1),(1,1,1),(-1,1,1)):
+            ET.SubElement(vertices, f"{{{CORE}}}vertex", dict(zip(("x","y","z"),
+                (format(sign * size / 2, ".17g") for sign,size in zip((x,y,z),dimensions)))))
+        triangles = ET.SubElement(box, f"{{{CORE}}}triangles")
+        for face in ((0,2,1),(0,3,2),(4,5,6),(4,6,7),(0,1,5),(0,5,4),
+                     (1,2,6),(1,6,5),(2,3,7),(2,7,6),(3,0,4),(3,4,7)):
+            ET.SubElement(triangles, f"{{{CORE}}}triangle", dict(zip(("v1","v2","v3"), map(str, face))))
+        settings = self._object_settings(object_id, create=True)
+        if mesh is not None:
+            original = ET.SubElement(resources, f"{{{CORE}}}object", {"id": str(seed), "type": "model"})
+            obj.remove(mesh)
+            original.append(mesh)
+            components = ET.SubElement(obj, f"{{{CORE}}}components")
+            ET.SubElement(components, f"{{{CORE}}}component", {"objectid": str(seed)})
+            parts = _children(settings, "part")
+            if parts:
+                parts[0].set("id", str(seed))
+            else:
+                ET.SubElement(settings, "part", {"id": str(seed), "subtype": "normal_part"})
+        resources.append(volume)
+        transform = IDENTITY[:9] + center
+        ET.SubElement(components, f"{{{CORE}}}component", {"objectid": str(modifier_id),
+            "transform": " ".join(format(v, ".17g") for v in transform)})
+        part = ET.SubElement(settings, "part", {"id": str(modifier_id), "subtype": "modifier_part"})
+        _set_metadata(part, "name", name)
+        for key,value in serialized.items():
+            _set_metadata(part, key, value)
+        return {"object_id": object_id, "part_id": modifier_id, "subtype": "modifier_part"}
 
     def _plate(self, plate):
         if type(plate) is not int:

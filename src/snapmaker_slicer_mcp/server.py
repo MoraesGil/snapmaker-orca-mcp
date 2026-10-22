@@ -3,6 +3,7 @@ import asyncio
 import json
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import StrictFloat, StrictInt
 
 from .service import Slicer
 from .editor import Editor
@@ -54,7 +55,7 @@ def build_server(slicer: Slicer, preset_dirs=()) -> FastMCP:
                              allow_custom_gcode: bool = False) -> dict:
         """Apply several edits atomically, each with an operation name and its arguments.
 
-        Supports set_config, set_object_config, duplicate/delete/transform_object,
+        Supports set_config, set_object_config, add_modifier, duplicate/delete/transform_object,
         add/delete_plate, move_object_to_plate, arrange_plate, auto_orient,
         set_height_range, set_layer_height and reset_layer_height. Failure leaves
         the current revision unchanged; every successful edit needs a fresh slice.
@@ -76,6 +77,19 @@ def build_server(slicer: Slicer, preset_dirs=()) -> FastMCP:
         """Edit object/part overrides. extruder=0 inherits; 1..N selects a filament slot."""
         return await operation(project_id, 'set_object_config', expected_sha256,
                                object_id=object_id, part_id=part_id, changes=changes)
+
+    @mcp.tool()
+    async def add_modifier(project_id: str, object_id: StrictInt, center: list[StrictFloat], dimensions: list[StrictFloat],
+                           changes: dict, name: str = "Modifier", expected_sha256: str | None = None) -> dict:
+        """Add a box centered at absolute object-local XYZ mm before instance transforms.
+
+        Affects all instances. Dimensions are positive XYZ mm. Supports regional
+        outer_wall_speed, inner_wall_speed, sparse_infill_speed, top_surface_speed
+        and internal_solid_infill_speed overrides as explicit arrays (e.g. [20]).
+        Re-slice after editing.
+        """
+        return await operation(project_id, 'add_modifier', expected_sha256, object_id=object_id,
+                               center=center, dimensions=dimensions, changes=changes, name=name)
 
     @mcp.tool()
     async def duplicate_object(project_id: str, object_id: int, expected_sha256: str | None = None) -> dict:
