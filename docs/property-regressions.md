@@ -63,6 +63,30 @@ stale revisions must leave the current 3MF revision unchanged. Regenerate G-code
 after adding a modifier. The native test must observe the requested speed
 inside the modified region and the baseline behavior outside it.
 
+The initial supported overrides are `outer_wall_speed`, `inner_wall_speed`,
+`sparse_infill_speed`, `top_surface_speed` and `internal_solid_infill_speed`.
+Use explicit arrays matching the current process flow variants, even when the
+UI shows a single speed. For a project whose `outer_wall_speed` has two variants:
+
+```json
+{
+  "name": "add_modifier",
+  "arguments": {
+    "project_id": "<id returned by load_model>",
+    "object_id": 1,
+    "center": [6, 12, 2.5],
+    "dimensions": [12, 30, 10],
+    "changes": {"outer_wall_speed": [20, 20]},
+    "expected_sha256": "<current revision sha256>"
+  }
+}
+```
+
+The same fields can be submitted in an `edit_project` operation with
+`"operation": "add_modifier"`. The number of flow variants is independent of
+the number of physical filament slots; preserve the current setting's array
+shape. `list_objects` includes each part's native subtype for inspection.
+
 ## Engine upgrades
 
 1. Obtain and select the new official app explicitly, preserving the previous

@@ -119,6 +119,10 @@ lack extracted label/tooltip documentation**. Type validation, saved-3MF persist
 effects are separate checks. See [property regressions](docs/property-regressions.md)
 for named cases, upgrade checks and the coverage gaps.
 
+`add_modifier` creates a box with an object-local XYZ center, dimensions in mm
+and supported regional speed overrides. It is also available in an atomic
+`edit_project` batch. See the [coordinate and array-value example](docs/property-regressions.md#modifier-coordinates-and-scope).
+
 - [Native macOS and MCP setup](MACOS.md)
 - [MCP tools and usage](docs/usage.md)
 - [REST, OpenAPI and downloads](docs/rest.md)
