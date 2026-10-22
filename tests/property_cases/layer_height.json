@@ -1,0 +1,22 @@
+{
+  "key": "layer_height",
+  "batch": 1,
+  "valid": [
+    {
+      "value": 0.16,
+      "normalized": "0.16",
+      "xml": "0.16"
+    },
+    {
+      "value": 0.28,
+      "normalized": "0.28",
+      "xml": "0.28"
+    }
+  ],
+  "invalid": [
+    -0.01,
+    "20%",
+    true,
+    "NaN"
+  ]
+}
