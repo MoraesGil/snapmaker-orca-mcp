@@ -27,7 +27,7 @@ def report(junit=None):
             success = not any(test.find(tag) is not None for tag in ('skipped', 'failure', 'error'))
             name = test.get('name', '')
             prefix = 'test_schema_contract_and_persistence['
-            if success and name.startswith(prefix) and name.endswith(']'):
+            if success and test.get('classname') in {'test_schema_matrix', 'tests.test_schema_matrix'} and name.startswith(prefix) and name.endswith(']'):
                 key = name[len(prefix):-1]
                 if key in cases:
                     contract_passed.append(key)
@@ -35,7 +35,7 @@ def report(junit=None):
                 passed.append(identity)
     return {'schema_matches_pin': schema_fingerprint() == doc['schema_sha256'],
             'source_commit': doc['source_commit'], 'catalog_count': len(cases),
-            'contract_matrix_declared': sorted(cases), 'contract_matrix_executed_passed': sorted(contract_passed), 'policy_rejections': blocked,
+            'contract_matrix_declared': sorted(cases), 'contract_matrix_executed_passed': sorted(set(contract_passed)), 'policy_rejections': blocked,
             'named_contract_cases': [c['key'] for c in named_cases()],
             'metadata_incomplete_keys': doc['unparsed_keys'],
             'legacy_unparsed_keys_meaning': 'Catalog entries missing both label and tooltip; not unsupported types and not an additional population.',

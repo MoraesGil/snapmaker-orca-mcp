@@ -53,6 +53,30 @@ def editor_fixture(tmp_path, part=False):
     return editor, source, editor.load_model(str(source))
 
 
+# Pinned native invalidation contract: only these stale slice-reference metadata
+# entries may disappear when saving an otherwise unchanged settings tree.
+STALE_SLICE_METADATA = frozenset({
+    'gcode_file', 'gcode_file_md5', 'thumbnail_file', 'thumbnail_no_light_file',
+    'top_file', 'pick_file', 'pattern_file', 'pattern_bbox_file',
+    'prediction', 'weight', 'is_sliced_valid',
+})
+
+
+def _settings_signature(data, key, scope):
+    root = ET.fromstring(data)
+    target = root.find("object[@id='2']") if scope == 'object' else root.find("object[@id='2']/part[@id='2']") if scope == 'part' else None
+    for parent in root.iter():
+        for child in list(parent):
+            if child.tag.rsplit('}', 1)[-1] == 'metadata' and (
+                    child.get('key') in STALE_SLICE_METADATA or
+                    parent is target and child.get('key') == key):
+                parent.remove(child)
+    def signature(element):
+        return (element.tag, sorted(element.attrib.items()), (element.text or '').strip(),
+                tuple(signature(child) for child in element))
+    return signature(root)
+
+
 def assert_saved(editor, source, original, state, key, normalized, xml=None, scope='global'):
     from snapmaker_slicer_mcp.project import Project
     assert source.read_bytes() == original
@@ -62,6 +86,15 @@ def assert_saved(editor, source, original, state, key, normalized, xml=None, sco
             for name in before.namelist():
                 if name not in {'Metadata/project_settings.config', 'Metadata/model_settings.config'} and not name.endswith('.gcode'):
                     assert z.read(name) == before.read(name), name
+            old_settings = before.read('Metadata/model_settings.config')
+            new_settings = z.read('Metadata/model_settings.config')
+            old_root = ET.fromstring(old_settings)
+            assert not any(e.tag.rsplit('}', 1)[-1] == 'metadata' and e.get('key') in STALE_SLICE_METADATA for e in ET.fromstring(new_settings).iter()), 'stale slice references survived'
+            has_stale = any(e.tag.rsplit('}', 1)[-1] == 'metadata' and e.get('key') in STALE_SLICE_METADATA for e in old_root.iter())
+            if scope == 'global' and not has_stale:
+                assert new_settings == old_settings, 'model_settings preservation'
+            else:
+                assert _settings_signature(new_settings, key, scope) == _settings_signature(old_settings, key, scope), 'model_settings preservation'
             old_config = json.loads(before.read('Metadata/project_settings.config'))
             new_config = json.loads(z.read('Metadata/project_settings.config'))
             assert {k: v for k, v in new_config.items() if k != key} == {k: v for k, v in old_config.items() if k != key}
