@@ -1,0 +1,22 @@
+{
+  "key": "wall_loops",
+  "batch": 1,
+  "valid": [
+    {
+      "value": 4,
+      "normalized": "4",
+      "xml": "4"
+    },
+    {
+      "value": 1,
+      "normalized": "1",
+      "xml": "1"
+    }
+  ],
+  "invalid": [
+    -1,
+    4.5,
+    1001,
+    true
+  ]
+}
