@@ -1,0 +1,9 @@
+{
+  "key": "inner_wall_speed",
+  "batch": 1,
+  "valid": [
+    {"value": [100, 150], "normalized": ["100", "150"], "xml": "100,150"},
+    {"value": [75.5, 160], "normalized": ["75.5", "160"], "xml": "75.5,160"}
+  ],
+  "invalid": [[0, 150], [-1, 150], ["Infinity", 150], [false, 150], 100]
+}
