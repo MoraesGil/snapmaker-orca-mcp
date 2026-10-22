@@ -1,0 +1,22 @@
+{
+  "key": "sparse_infill_density",
+  "batch": 1,
+  "valid": [
+    {
+      "value": 25,
+      "normalized": "25%",
+      "xml": "25%"
+    },
+    {
+      "value": "60%",
+      "normalized": "60%",
+      "xml": "60%"
+    }
+  ],
+  "invalid": [
+    -1,
+    101,
+    "25mm",
+    true
+  ]
+}
