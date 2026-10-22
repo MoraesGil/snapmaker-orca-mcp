@@ -80,6 +80,8 @@ inside the modified region and the baseline behavior outside it.
    merging a validated batch. Printer execution is a separate operation.
 
 The baseline catalog is pinned to 2.4.1 / `9bf2f18eaff7cc0655cbdeef6a215660085ecb0f`:
-699 extracted keys and 91 explicitly unparsed keys. Unparsed keys are unsupported
-for new typed edits until extraction, validation and tests are added; existing
-unknown historical values can remain preserved in a project.
+699 extracted keys. The legacy `_meta.unparsed_keys` field lists 91 of those
+same keys without extracted label and tooltip text; their types are cataloged
+and they remain covered by the contract matrix. This field does not mean 91
+extra or unsupported settings. Existing unknown historical values can remain
+preserved in a project.

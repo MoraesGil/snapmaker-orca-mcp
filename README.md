@@ -114,8 +114,8 @@ engine download/update is included.
 
 Use `load_model` → `set_config` / `edit_project` → `slice_project` to edit a
 private 3MF revision and regenerate G-code. Re-slice after every change.
-The catalog contains **699 extracted settings**; **91 additional native keys
-remain unparsed**. Type validation, saved-3MF persistence and native G-code
+The catalog contains **699 extracted settings**; **91 of those keys
+lack extracted label/tooltip documentation**. Type validation, saved-3MF persistence and native G-code
 effects are separate checks. See [property regressions](docs/property-regressions.md)
 for named cases, upgrade checks and the coverage gaps.
 
