@@ -81,13 +81,13 @@ def test_required_completion_requires_current_identity_and_each_case_run_id():
     import runpy
     from pathlib import Path
     runner=runpy.run_path(str(Path(__file__).resolve().parents[2]/'scripts/run_native_regressions.py'))
-    initial={'run_id':'current','test_source_commit':'a'*40,'requested_engine':{'app':'/public/synthetic.app','source_commit':'b'*40}}
+    initial={'run_id':'current','test_source_commit':'a'*40,'test_source_dirty':False,'requested_engine':{'app':'/public/synthetic.app','source_commit':'b'*40}}
     data={**initial,'engine_run_id':'current','engine':{
         'source_commit':'b'*40,'native_version':'2.4.1','executable_sha256':'c'*64,'resources_sha256':'d'*64,
         'executable':'/public/synthetic.app/Contents/MacOS/Snapmaker_Orca','resources':'/public/synthetic.app/Contents/Resources'},
         'cases':{key:{'status':'pass','run_id':'current'} for key in runner['EXPECTED']}}
     assert runner['complete'](data,initial)
-    for field in ('run_id','engine_run_id','test_source_commit'):
+    for field in ('run_id','engine_run_id','test_source_commit','test_source_dirty'):
         bad=copy.deepcopy(data);bad[field]='old'
         assert not runner['complete'](bad,initial)
     for field in ('source_commit','executable','resources','executable_sha256','resources_sha256','native_version'):

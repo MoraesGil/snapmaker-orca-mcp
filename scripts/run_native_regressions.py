@@ -16,7 +16,7 @@ EXPECTED = {'outer_wall_speed','inner_wall_speed','layer_height','wall_loops',
 def complete(data, initial):
     """Only this subprocess's fixture and all case records can certify its run."""
     run_id=initial['run_id']
-    if any(data.get(k)!=initial[k] for k in ('run_id','test_source_commit','requested_engine')):
+    if any(data.get(k)!=initial[k] for k in ('run_id','test_source_commit','test_source_dirty','requested_engine')):
         return False
     if data.get('engine_run_id')!=run_id:
         return False
@@ -45,7 +45,8 @@ def main():
     a=p.parse_args();root=Path(__file__).resolve().parents[1];report=Path(a.report).resolve()
     report.parent.mkdir(parents=True,exist_ok=True)
     source_commit=subprocess.run(['git','rev-parse','HEAD'],cwd=root,capture_output=True,text=True,check=True).stdout.strip()
-    initial={'run_id':uuid.uuid4().hex,'status':'pending','test_source_commit':source_commit,
+    source_dirty=bool(subprocess.run(['git','status','--porcelain'],cwd=root,capture_output=True,text=True,check=True).stdout)
+    initial={'run_id':uuid.uuid4().hex,'status':'pending','test_source_commit':source_commit,'test_source_dirty':source_dirty,
              'requested_engine':{'app':str(Path(a.app).resolve()),'source_commit':a.source_commit},
              'cases':{key:{'status':'not_run'} for key in sorted(EXPECTED)}}
     # Truncate any earlier evidence BEFORE dispatch, even when pytest selects no fixture.

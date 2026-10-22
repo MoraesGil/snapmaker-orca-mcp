@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+import subprocess
 from pathlib import Path
 import pytest
 from . import harness
@@ -23,16 +24,20 @@ def native_engine(tmp_path_factory):
     report=Path(os.environ.get('SNAPMAKER_NATIVE_REPORT',str(tmp_path_factory.getbasetemp()/'native-report.json'))).resolve()
     report.parent.mkdir(parents=True,exist_ok=True)
     identity={**engine.manifest,'native_version':version,'native_build':build}
+    root=Path(__file__).resolve().parents[2]
+    test_commit=subprocess.run(['git','rev-parse','HEAD'],cwd=root,capture_output=True,text=True,check=True).stdout.strip()
+    test_dirty=bool(subprocess.run(['git','status','--porcelain'],cwd=root,capture_output=True,text=True,check=True).stdout)
     run_id=os.environ.get('SNAPMAKER_NATIVE_RUN_ID')
     if run_id:
         data=json.loads(report.read_text())
         assert data['run_id']==run_id, 'Native report belongs to another run'
-        assert data['test_source_commit']==os.environ['SNAPMAKER_NATIVE_TEST_COMMIT']
+        assert data['test_source_commit']==os.environ['SNAPMAKER_NATIVE_TEST_COMMIT']==test_commit
+        assert data['test_source_dirty']==test_dirty
         assert data['requested_engine']=={'app':str(app.parent.resolve()),'source_commit':commit}
     else:
         run_id=uuid.uuid4().hex
         data={'run_id':run_id,'cases':{key:{'status':'not_run'} for key in [*harness.CASES,'modifier']}}
-    data.update(engine=identity,engine_run_id=run_id)
+    data.update(engine=identity,engine_run_id=run_id,test_source_commit=test_commit,test_source_dirty=test_dirty)
     report.write_text(json.dumps(data,indent=2))
     engine.regression_run_id=run_id
     engine.regression_report=report
