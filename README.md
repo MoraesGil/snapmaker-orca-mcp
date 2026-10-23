@@ -21,6 +21,7 @@ This is an independent community project, not an official Snapmaker product.
 | Pinned adapter and setting catalog | **Snapmaker Orca 2.4.1**, official source commit `9bf2f18eaff7cc0655cbdeef6a215660085ecb0f` |
 | Direct macOS slicing | Installed Snapmaker Orca + this repository's Bash script; Bash and system utilities are supplied by macOS |
 | MCP / REST | The same installed slicer + **Python 3.11+**, the project dependencies and MCP client configuration; the commands below use **uv** |
+| Python transport framework | **FastMCP 4.1.3**, with the MCP SDK v2; public tool/resource and REST contracts are regression-tested |
 
 The desktop app contains the native CLI executable. The GUI can remain closed.
 On macOS, neither Docker nor a separate Linux engine is required. Do not move
@@ -135,6 +136,7 @@ Conventional Commits, validation and pull requests.
 
 ```sh
 uv sync --frozen --extra test
+uv run --frozen --extra test mypy
 uv run pytest -q
 bash -n bin/snapmaker-slice.sh
 ```
@@ -142,5 +144,9 @@ bash -n bin/snapmaker-slice.sh
 The service tests use native-boundary fixtures; optional tests can exercise a
 separately installed official engine. Local benchmarks and customer models do
 not belong in the public repository.
+
+The Python service separates typed domain values, application contracts/services
+and concrete adapters. See [the service architecture](docs/architecture.md) for
+the boundaries, native execution lifecycle and compatibility checks.
 
 [AGPLv3 license](LICENSE.txt)

@@ -52,6 +52,7 @@ Preserve these project contracts:
 For a new behavior or bug fix, reproduce the failure with a focused regression before implementing it. Test observable results and edge cases; use doubles at the native-process/transport boundary. Then run the public suite and release checks from the worktree:
 
 ```sh
+uv run --frozen --extra test mypy
 uv run --frozen --extra test pytest tests -q
 bash -n bin/snapmaker-slice.sh
 uv build

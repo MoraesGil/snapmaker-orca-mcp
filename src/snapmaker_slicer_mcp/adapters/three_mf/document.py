@@ -99,7 +99,13 @@ def _set_metadata(root: ET.Element, key: str, value: object) -> None:
 @functools.lru_cache(maxsize=1)
 def _option_types() -> dict[str, str]:
     from ...presets import load_schema
-    return {key: record["type"] for key, record in load_schema().items()}
+    result: dict[str, str] = {}
+    for key, record in load_schema().items():
+        kind = record['type']
+        if not isinstance(kind, str):
+            raise ValueError(f'Native option type must be a string: {key}')
+        result[key] = kind
+    return result
 
 
 def _escape_cstyle(value: str) -> str:
