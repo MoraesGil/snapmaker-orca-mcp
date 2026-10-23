@@ -29,6 +29,9 @@ jobs:
       - name: Check strict Python contracts
         run: uv run --locked --extra test mypy
       - run: uv run --locked --extra test pytest tests -q
+      - name: Check isolated MCP SDK-v1 interoperability
+        if: matrix.python == '3.11'
+        run: uv run --isolated scripts/check_sdk1_interop.py --server-python .venv/bin/python --scratch .temp/sdk1-interop
       - run: uv build
       - name: Check distribution boundaries
         run: uv run --locked python scripts/check_distribution.py

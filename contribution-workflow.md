@@ -54,6 +54,7 @@ For a new behavior or bug fix, reproduce the failure with a focused regression b
 ```sh
 uv run --frozen --extra test mypy
 uv run --frozen --extra test pytest tests -q
+uv run --isolated scripts/check_sdk1_interop.py --server-python .venv/bin/python --scratch .temp/sdk1-interop
 bash -n bin/snapmaker-slice.sh
 uv build
 uv run --frozen python scripts/check_distribution.py

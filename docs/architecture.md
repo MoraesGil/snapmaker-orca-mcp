@@ -55,6 +55,7 @@ presets remain read-only. Preset writes target artifact-local drafts.
 uv sync --frozen --extra test
 uv run --frozen --extra test mypy
 uv run --frozen --extra test pytest tests -q
+uv run --isolated scripts/check_sdk1_interop.py --server-python .venv/bin/python --scratch .temp/sdk1-interop
 ```
 
 Mypy checks the whole first-party package in strict mode, also rejecting
