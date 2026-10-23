@@ -113,7 +113,7 @@ Acceptance requires all existing behavior tests plus the new architecture/contra
 
 ## Delivery and review boundary
 
-This document is the review artifact for the architectural direction. After owner review, write the implementation plan with dependency order, file ownership and verification gates. Implementation then proceeds in the named architecture worktree with Conventional Commits and a PR following the repository contribution workflow.
+This document is the review artifact for the architectural direction. After the owner explicitly approves this written specification, write the implementation plan with dependency order, file ownership and verification gates. The owner then reviews the written plan and confirms the execution approach. Production changes and product-dependency installation wait for those stages; an existing execution-method preference is preserved. Implementation proceeds in the named architecture worktree with Conventional Commits and a PR following the repository contribution workflow.
 
 The next PR may remain a draft while design/implementation review is pending. It must describe the final delivered scope and actual checks; a committed design is not an implemented architecture.
 
