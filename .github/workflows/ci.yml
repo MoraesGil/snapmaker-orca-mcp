@@ -26,6 +26,8 @@ jobs:
           enable-cache: true
           python-version: ${{ matrix.python }}
       - run: uv sync --locked --extra test
+      - name: Check strict Python contracts
+        run: uv run --locked --extra test mypy
       - run: uv run --locked --extra test pytest tests -q
       - run: uv build
       - name: Check distribution boundaries

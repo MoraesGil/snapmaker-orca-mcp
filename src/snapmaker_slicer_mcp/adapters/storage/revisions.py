@@ -12,9 +12,9 @@ from ...domain.types.json import JsonObject, JsonValue, json_object, is_json_val
 from ...domain.settings.values import text, integer
 from ...application.contracts.projects import ProjectDocument
 from ...application.contracts.presets import EngineIdentity
-from ...engine import file_hash
-from ...project import Project
-from ...service import validate_project, write_json
+from ..orca.engine import file_hash
+from ..three_mf.document import Project
+from .artifacts import validate_project, write_json
 
 
 class StoredProjectDocument:

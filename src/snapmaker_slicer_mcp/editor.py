@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Protocol
 from .application.services.projects import ProjectService
 from .application.contracts.projects import ProjectSlicer
-from .adapters.storage.revisions import FilesystemRevisionRepository
-from .adapters.orca.editing import NativeHost, OrcaNativeEditing
+from .adapters.orca.editing import NativeHost
+from .bootstrap import project_parts
 from .presets import Catalog
 from . import presets
 from .engine import Engine
@@ -18,8 +18,9 @@ class EditorHost(ProjectSlicer, NativeHost, Protocol):
     def engine(self) -> Engine: ...
 
 class Editor(ProjectService):
+    catalog: Catalog
+
     def __init__(self, slicer: EditorHost, preset_dirs: Iterable[str | Path] = ()):
-        repository = FilesystemRevisionRepository(slicer.root / 'projects')
-        self.root = repository.root
-        catalog = Catalog(slicer.engine, [Path(path) for path in preset_dirs], slicer.root / 'preset-drafts')
-        super().__init__(slicer, repository, catalog, OrcaNativeEditing(slicer, repository), presets._schema_doc())
+        parts = project_parts(slicer, slicer.root, preset_dirs)
+        self.root = parts.revisions.root
+        super().__init__(slicer, parts.revisions, parts.catalog, parts.native, presets._schema_doc())
