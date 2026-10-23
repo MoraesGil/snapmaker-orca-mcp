@@ -67,3 +67,20 @@ async def test_unknown_setting_keeps_legacy_empty_success_content(tmp_path):
             result = await session.call_tool('describe_setting', {'key': 'contract_unknown_setting'})
             assert not result.is_error
             assert result.content == []
+
+
+@pytest.mark.parametrize('uri,message', [
+    ('slicer://unknown', 'Unknown resource: slicer://unknown'),
+    ('slicer://jobs/missing/manifest',
+     'Error creating resource from template: Error creating resource from template: Invalid generated job ID'),
+])
+async def test_resource_errors_keep_legacy_protocol_envelope(tmp_path, uri, message):
+    from mcp.shared.exceptions import MCPError
+    _, app = make_app(tmp_path)
+    async with app.router.lifespan_context(app):
+        async with session_at('http://testserver/mcp', httpx.ASGITransport(app=app)) as session:
+            with pytest.raises(MCPError) as caught:
+                await session.read_resource(uri)
+            assert caught.value.code == 0
+            assert caught.value.message == message
+            assert caught.value.data is None

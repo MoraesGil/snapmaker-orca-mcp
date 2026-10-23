@@ -26,6 +26,7 @@ from pathlib import Path
 import httpx
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.shared.exceptions import McpError
 from mcp.client.streamable_http import streamable_http_client
 
 
@@ -49,6 +50,17 @@ async def check(session: ClientSession, fixture: dict, source: Path) -> None:
     ]:
         result = await session.call_tool(name, arguments)
         assert result.model_dump(mode='json', by_alias=True, exclude_none=True) == fixture['mcp_errors'][label], label
+    for uri, message in [
+        ('slicer://unknown', 'Unknown resource: slicer://unknown'),
+        ('slicer://jobs/missing/manifest',
+         'Error creating resource from template: Error creating resource from template: Invalid generated job ID'),
+    ]:
+        try:
+            await session.read_resource(uri)
+        except McpError as error:
+            assert error.error.code == 0 and error.error.message == message and error.error.data is None
+        else:
+            raise AssertionError('Expected legacy resource failure')
     unknown_setting = await session.call_tool('describe_setting', {'key': 'contract_unknown_setting'})
     assert unknown_setting.content == [] and not unknown_setting.isError
     loaded = await session.call_tool('load_model', {'path': str(source), 'ignored_legacy_key': True})

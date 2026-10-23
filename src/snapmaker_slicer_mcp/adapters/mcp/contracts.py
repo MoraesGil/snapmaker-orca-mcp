@@ -14,11 +14,13 @@ from typing_extensions import TypeForm
 from pydantic_core import InitErrorDetails
 
 from fastmcp import FastMCP
-from fastmcp.exceptions import NotFoundError, ToolError
+from fastmcp.exceptions import NotFoundError, ResourceError, ToolError
+from fastmcp.resources import ResourceResult
 from fastmcp.resources.template import FunctionResourceTemplate
 from fastmcp.server.middleware import CallNext, Middleware, MiddlewareContext
 from fastmcp.tools import Tool, ToolResult
 from mcp import types
+from mcp.shared.exceptions import MCPError
 from pydantic import Field, TypeAdapter, ValidationError
 from pydantic.json_schema import SkipJsonSchema
 
@@ -59,6 +61,22 @@ class LegacyErrors(Middleware):
         except NotFoundError:
             return ToolResult(content=[types.TextContent(type='text', text=f'Unknown tool: {context.message.name}')],
                               is_error=True)
+
+
+    async def on_read_resource(self, context: MiddlewareContext[types.ReadResourceRequestParams],
+                               call_next: CallNext[types.ReadResourceRequestParams, ResourceResult]) -> ResourceResult:
+        try:
+            return await call_next(context)
+        except NotFoundError as error:
+            raise MCPError(0, f'Unknown resource: {context.message.uri}') from error
+        except ResourceError as error:
+            # SDK-v1 wrapped template failures at creation and manager boundaries.
+            # Unwrap framework envelopes only, retaining application error text.
+            cause: BaseException = error
+            while isinstance(cause, ResourceError) and cause.__cause__ is not None:
+                cause = cause.__cause__
+            raise MCPError(0, 'Error creating resource from template: '
+                           f'Error creating resource from template: {cause}') from error
 
 
 def register_tool(server: FastMCP[None]) -> Callable[[Callable[P, ToolValue | Awaitable[ToolValue]]], Callable[P, ToolValue | Awaitable[ToolValue]]]:
