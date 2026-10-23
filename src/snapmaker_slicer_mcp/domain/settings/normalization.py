@@ -6,7 +6,7 @@ import copy
 import math
 import re
 from decimal import Decimal, InvalidOperation
-from ..types.json import JsonObject, JsonValue, json_object
+from ..types.json import JsonObject, JsonValue, json_object, is_json_value
 from .values import record, text, array, strings
 
 _TYPES = {"print": "print", "process": "print", "printer": "printer", "machine": "printer", "filament": "filament"}
@@ -151,6 +151,27 @@ def _scalar(value: JsonValue, rec: JsonObject, key: str) -> str:
     raise ValueError(f"{key}: unsupported native setting type {kind}")
 
 
+def _input_changes(value: object, schema: JsonObject) -> JsonObject:
+    # JSON callers already have the internal representation. Python callers
+    # additionally support tuples for an individual point, never for a vector.
+    if is_json_value(value) and isinstance(value, dict):
+        return value
+    if not isinstance(value, dict):
+        raise ValueError('Changes must be a JSON object')
+    result: dict[str, object] = {}
+    for key, item in value.items():
+        if not isinstance(key, str):
+            raise ValueError(f'Unknown native setting: {key}')
+        kind = record(schema[key]).get('type') if key in schema else None
+        converted: object = item
+        if kind in ('coPoint', 'coPoint3') and isinstance(item, tuple):
+            converted = list(item)
+        elif kind in ('coPoints', 'coPoints3') and isinstance(item, list):
+            converted = [list(point) if isinstance(point, tuple) else point for point in item]
+        result[key] = converted
+    return json_object(result, 'Changes')
+
+
 def validate_changes(changes: object, current: object, schema: JsonObject, allow_custom_gcode: bool = False) -> JsonObject:
     """Normalize native JSON strings/arrays without broadcasting or resizing slots.
 
@@ -159,7 +180,7 @@ Unknown historical fields are preserved by editors but cannot acquire new values
 """
     if not isinstance(changes, dict) or not isinstance(current, dict):
         raise ValueError("Changes and current configuration must be objects")
-    changes = json_object(changes, "Changes")
+    changes = _input_changes(changes, schema)
     current = json_object(current, "Current configuration")
     normalized: JsonObject = {}
     for key, value in changes.items():
