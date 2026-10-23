@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Proposed domain, application and adapter boundaries for Snapmaker Orca MCP. Awaiting owner approval before implementation planning.">
+  <meta name="color-scheme" content="light">
+  <title>Slicer architecture design — Snapmaker Orca MCP</title>
+  <style>
+    :root {
+      --paper: #ffffff;
+      --canvas: #f5f5f2;
+      --ink: #202a33;
+      --muted: #56616c;
+      --line: #d9dedf;
+      --link: #17528b;
+      --code: #f0f2f4;
+      --status: #fff5dc;
+      --status-line: #a96912;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-padding-top: 1.5rem; }
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 17px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { color: var(--link); text-underline-offset: .18em; }
+    a:hover { text-decoration-thickness: 2px; }
+    a:focus-visible, .table-wrap:focus-visible {
+      outline: 3px solid var(--link);
+      outline-offset: 4px;
+      border-radius: 2px;
+    }
+    .skip-link {
+      position: absolute;
+      top: -8rem;
+      left: 1rem;
+      z-index: 2;
+      padding: .5rem 1rem;
+      background: var(--paper);
+    }
+    .skip-link:focus { top: .5rem; }
+    .masthead {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.4rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: .4rem 1rem;
+      font-size: .82rem;
+      color: var(--muted);
+    }
+    .masthead strong { color: var(--ink); font-size: .9rem; }
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto 3rem;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: 244px minmax(0, 1fr);
+      gap: 2.5rem;
+      align-items: start;
+    }
+    nav {
+      position: sticky;
+      top: 1.5rem;
+      max-height: calc(100vh - 3rem);
+      overflow-y: auto;
+      padding: .5rem .75rem .75rem 0;
+      font-size: .81rem;
+      line-height: 1.5;
+    }
+    nav h2 {
+      margin: 0 0 .7rem;
+      font-size: .75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    nav ul { list-style: none; margin: 0; padding: 0; }
+    nav ul ul { padding-left: .85rem; }
+    nav li { margin: .6rem 0; }
+    nav a { display: block; padding: .12rem 0; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    main { min-width: 0; }
+    article {
+      background: var(--paper);
+      padding: 2.8rem 3rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow-wrap: anywhere;
+    }
+    h1, h2, h3 { color: #18222d; line-height: 1.25; }
+    h1 { margin: 0 0 1.3rem; font-size: clamp(2rem, 3.5vw, 2.6rem); letter-spacing: -.025em; }
+    article h2 {
+      margin: 2.8rem 0 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--line);
+      font-size: 1.35rem;
+      letter-spacing: -.01em;
+    }
+    p { margin: 0 0 1rem; }
+    article > p:first-of-type {
+      background: var(--status);
+      border-left: 4px solid var(--status-line);
+      padding: .8rem 1rem;
+      font-size: .95rem;
+      font-weight: 600;
+    }
+    article > p:nth-of-type(2) { color: var(--muted); font-size: .85rem; }
+    article ul { margin: 0 0 1.25rem; padding-left: 1.3rem; }
+    article li { padding-left: .2rem; margin: .7rem 0; }
+    code {
+      background: var(--code);
+      padding: .12em .3em;
+      border-radius: 3px;
+      font: .85em/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+    table { width: 100%; margin: 1.3rem 0; border-collapse: collapse; font-size: .88rem; line-height: 1.55; }
+    th, td { text-align: left; vertical-align: top; padding: .8rem .85rem; border: 1px solid var(--line); }
+    th { background: #edf1f3; font-weight: 650; }
+    tbody tr:nth-child(even) { background: #fafbfb; }
+    th:first-child, td:first-child { width: 36%; }
+    .footer { padding: 1.2rem .2rem; color: var(--muted); font-size: .8rem; }
+    @media (max-width: 1040px) {
+      .layout { grid-template-columns: 205px minmax(0, 1fr); gap: 1.5rem; }
+      article { padding: 2.2rem; }
+    }
+    @media (max-width: 780px) {
+      .masthead { padding: 1rem; }
+      .layout { display: block; padding: 0 1rem; }
+      nav { position: static; max-height: none; padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--line); border-radius: 6px; }
+      nav > ul > li { margin: 0; }
+      nav ul ul { padding-left: 0; columns: 2; column-gap: 1.2rem; }
+      nav li { break-inside: avoid; margin: .3rem 0; }
+      article { padding: 1.5rem; }
+      article h2 { font-size: 1.25rem; }
+    }
+    @media (max-width: 480px) {
+      body { font-size: 16px; }
+      .layout { padding: 0 .65rem; }
+      article { padding: 1.25rem; }
+      nav ul ul { columns: 1; }
+      table { font-size: .79rem; }
+      th, td { padding: .6rem .5rem; }
+    }
+    @media print {
+      @page { size: A4; margin: 17mm; }
+      body { background: white; font-size: 10.5pt; line-height: 1.55; }
+      .skip-link, nav { display: none; }
+      .masthead { max-width: none; padding: 0 0 1rem; font-size: 9pt; }
+      .layout { display: block; max-width: none; margin: 0; padding: 0; }
+      article { border: 0; border-radius: 0; padding: 0; }
+      h1 { font-size: 25pt; }
+      article h2 { font-size: 15pt; margin-top: 1.5rem; break-after: avoid; }
+      p, li { orphans: 3; widows: 3; }
+      table { font-size: 9pt; }
+      tr { break-inside: avoid; }
+      a { color: inherit; }
+      .footer { border-top: 1px solid var(--line); margin-top: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#specification">Skip to specification</a>
+  <header class="masthead">
+    <strong>Snapmaker Orca MCP</strong>
+    <span>Architecture proposal · 22 October 2026 · <a href="https://github.com/MoraesGil/snapmaker-orca-mcp/pull/2">Draft PR #2</a></span>
+  </header>
+  <div class="layout">
+    <nav aria-labelledby="contents-heading">
+      <h2 id="contents-heading">Contents</h2>
+<ul>
+<li><a href="#slicer-architecture-design" id="toc-slicer-architecture-design">Slicer architecture design</a>
+<ul>
+<li><a href="#intent-and-accepted-scope" id="toc-intent-and-accepted-scope">Intent and accepted scope</a></li>
+<li><a href="#current-baseline" id="toc-current-baseline">Current baseline</a></li>
+<li><a href="#approach-and-trade-offs" id="toc-approach-and-trade-offs">Approach and trade-offs</a></li>
+<li><a href="#domain-model-and-responsibilities" id="toc-domain-model-and-responsibilities">Domain model and responsibilities</a></li>
+<li><a href="#application-and-dependency-direction" id="toc-application-and-dependency-direction">Application and dependency direction</a></li>
+<li><a href="#package-organization" id="toc-package-organization">Package organization</a></li>
+<li><a href="#framework-migration" id="toc-framework-migration">Framework migration</a></li>
+<li><a href="#native-engine-boundary" id="toc-native-engine-boundary">Native engine boundary</a></li>
+<li><a href="#preserved-data-concurrency-and-errors" id="toc-preserved-data-concurrency-and-errors">Preserved data, concurrency and errors</a></li>
+<li><a href="#validation-and-acceptance" id="toc-validation-and-acceptance">Validation and acceptance</a></li>
+<li><a href="#delivery-and-review-boundary" id="toc-delivery-and-review-boundary">Delivery and review boundary</a></li>
+<li><a href="#references" id="toc-references">References</a></li>
+</ul></li>
+</ul>
+    </nav>
+    <main id="specification">
+      <article aria-labelledby="slicer-architecture-design">
+<h1 id="slicer-architecture-design">Slicer architecture design</h1>
+<p>Status: proposed for owner review; implementation has not started.</p>
+<p>Base: merged PR #1, commit <code>dde96a946451befac37a5021a1ab17749f0cc31b</code>.</p>
+<h2 id="intent-and-accepted-scope">Intent and accepted scope</h2>
+<p>Organize Snapmaker Orca MCP around its editing and slicing domain, with explicit application boundaries and replaceable infrastructure. Adopt the standalone FastMCP framework while preserving observable MCP, REST and CLI behavior. The owner approved merging the slicer work and proceeding to architecture after clarifying its scope.</p>
+<p>The product remains a local/headless interface to the official Snapmaker Orca slicing engine. Source 3MFs and installed presets remain read-only; private revisions preserve geometry, painting, IDs, transforms and provenance. This phase does not add Moonraker/Klipper clients or physical printer operations.</p>
+<h2 id="current-baseline">Current baseline</h2>
+<ul>
+<li>Package <code>snapmaker-slicer-mcp</code> is 0.4.0, Python 3.11+, with SDK <code>mcp&gt;=1.30,&lt;2</code> and the SDK-bundled FastMCP. The repository uses uv and pytest.</li>
+<li>There are 34 MCP tools, three resource templates and eight REST routes, plus the installed Python CLI and independent Bash slicing launcher. Their names, schemas, defaults, resource URIs and documented behavior form the compatibility boundary.</li>
+<li><code>Project</code> combines 3MF storage, XML edits, geometry operations and serialization. <code>Editor</code> combines use-case coordination, revision persistence and direct document manipulation. <code>Slicer</code> combines admission, caching, artifact storage and subprocess execution.</li>
+<li>MCP and REST share the same backend. Bounded G-code line extraction is duplicated; REST additionally protects downloads with a verified snapshot. Consolidation must retain that protection.</li>
+<li>Required native integration on clean PR head <code>67a2728</code> passed 1,271 tests with one absent-private-fixture skip. The merged tree is identical. Native evidence covers ten property cases and one modifier case, not every catalog property or physical printing.</li>
+</ul>
+<p>The architecture assessment is modular code with partial SOLID/DRY application. File moves alone do not establish DDD or Clean Architecture.</p>
+<h2 id="approach-and-trade-offs">Approach and trade-offs</h2>
+<p>Use an incremental refactor: capture the existing public contracts, isolate infrastructure behind application-owned ports, extract domain rules, then migrate the transport framework. Each step must leave the suite usable. Protocol changes and responsibility changes should be separate commits so failures can be attributed.</p>
+<p>Two alternatives were considered: retain SDK v1 and defer the framework migration, or migrate the framework before separating responsibilities. Retaining v1 reduces the immediate transport change but postpones the requested framework standardization. Migrating first introduces new protocol behavior before the current coupling is reduced. The selected order uses the existing tests and explicit boundaries to check the framework transition.</p>
+<p>This is one Python package and one backend process. Use domain modeling where it captures real invariants; do not introduce separate services, an event bus or a generic dependency-injection framework.</p>
+<h2 id="domain-model-and-responsibilities">Domain model and responsibilities</h2>
+<p>Use three cooperating areas: project editing, presets/settings and slicing jobs. Their common language includes project, revision, plate, object, part, modifier, filament slot, flow variant, preset, slice request and generated artifact.</p>
+<p>Introduce small immutable value types for project/object/plate identifiers, SHA-256 revision tokens, positive XYZ box dimensions, finite object-local coordinates and bounded G-code line ranges. Keep valid negative modifier centers, existing slot numbering and current native string/array shapes. Domain types validate meaning; transport schemas validate wire input.</p>
+<p>Project revisions are identified by immutable content hashes and an explicit source/revision relationship. Editing a batch either publishes one validated new revision or leaves the current revision unchanged. A selected plate is editing state; a logical material slot is not a physical toolhead assignment.</p>
+<p>Settings normalization receives the extracted schema as data. It must not load package files implicitly. Keep intentional policy rejection of transport credentials, external scripts and printer identity changes, and the explicit custom-G-code opt-in.</p>
+<p>Domain code uses ordinary Python types/dataclasses and pure functions. It must not import MCP, Starlette, Pydantic, filesystem/process libraries or XML/ZIP implementations. The 3MF representation stays in a format adapter; do not construct a second in-memory copy of every mesh merely to create domain objects.</p>
+<h2 id="application-and-dependency-direction">Application and dependency direction</h2>
+<p>Application use cases coordinate loading, reading, editing, preset drafts, slicing, recovery and artifact queries. They depend on domain types and narrow ports. They do not instantiate infrastructure or reach into another service's private lock/state.</p>
+<p>Required port responsibilities are:</p>
+<table>
+<thead>
+<tr>
+<th>Port responsibility</th>
+<th>Boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Project revision repository</td>
+<td>Source snapshots, revision state, compare-and-swap publication and selected-plate persistence</td>
+</tr>
+<tr>
+<td>3MF document reader/editor</td>
+<td>Describe and apply typed edits while preserving unknown payloads and metadata; write staged revisions</td>
+</tr>
+<tr>
+<td>Native slicing/layout runner</td>
+<td>Execute explicitly bound native slice, arrange/orient operations and return typed results/deltas</td>
+</tr>
+<tr>
+<td>Artifact repository</td>
+<td>Cache/job records, retained outputs, canonical paths and verified read snapshots</td>
+</tr>
+<tr>
+<td>Preset repository</td>
+<td>Read-only installed inheritance and artifact-local draft persistence</td>
+</tr>
+</tbody>
+</table>
+<p>Split read/mutation or slice/layout capabilities where consumers need different operations. Do not make each use case depend on a single interface containing every operation in the product. Concrete filesystem/3MF/native implementations may satisfy several narrow protocols.</p>
+<p>The composition root constructs concrete adapters and injects them into use cases. Only that root knows the complete assembly. Both MCP and REST receive the same application/backend instances and native admission coordinator.</p>
+<h2 id="package-organization">Package organization</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Owns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>domain/</code></td>
+<td>Value types, editing/settings invariants and domain results</td>
+</tr>
+<tr>
+<td><code>application/</code></td>
+<td>Use cases, typed commands/results and application-owned port protocols</td>
+</tr>
+<tr>
+<td><code>adapters/three_mf/</code></td>
+<td>ZIP/XML representation, component/plate/layer edits and serialization</td>
+</tr>
+<tr>
+<td><code>adapters/native/</code></td>
+<td>Engine identity, resources, subprocess lifecycle and native geometry translation</td>
+</tr>
+<tr>
+<td><code>adapters/storage/</code></td>
+<td>Filesystem revisions, cache, artifacts and preset drafts</td>
+</tr>
+<tr>
+<td><code>adapters/mcp/</code></td>
+<td>FastMCP assembly, resources and tool groups for projects, settings, presets and slicing</td>
+</tr>
+<tr>
+<td><code>adapters/http/</code></td>
+<td>REST routes, HTTP lifecycle and access policy</td>
+</tr>
+<tr>
+<td><code>bootstrap.py</code> and <code>cli.py</code></td>
+<td>Application assembly and installed command entry point</td>
+</tr>
+</tbody>
+</table>
+<p>Preserve supported Python entry points with thin compatibility facades where necessary. Move tests of private helpers to their actual owners; do not keep cross-layer private imports just to preserve an internal filename. Retain one owner for XML namespace synchronization and one shared native admission policy.</p>
+<h2 id="framework-migration">Framework migration</h2>
+<p>Target standalone FastMCP 4.1.3, with an explicit compatible major-version bound and a reviewed uv lockfile. It builds on MCP SDK v2. Declare libraries imported directly by the project as direct dependencies rather than relying accidentally on transitive installation.</p>
+<p>Group tools by capability and compose them without changing public tool names or adding namespace prefixes. Keep <code>load_model</code>, <code>edit_project</code>, <code>add_modifier</code>, slicing and preset operations consistent with the current contract inventory. Keep all three <code>slicer://</code> resource templates unchanged.</p>
+<p>Replace SDK-v1-specific HTTP assembly with the framework's supported HTTP application/lifespan API. Preserve authenticated <code>/mcp</code>, the eight REST paths, exact Host/Origin checks, bearer handling and minimal <code>/health</code> behavior. Starting a remote transport without its required access configuration must still fail before native work.</p>
+<p>SDK-v2 Python attribute renames are internal changes. Do not use them as a reason to silently change existing client-visible schemas or data. Test both a supported contemporary client and an isolated SDK-v1 client against the new server. If the selected framework cannot preserve the agreed client contract, expose that incompatibility for a decision instead of weakening the contract tests.</p>
+<h2 id="native-engine-boundary">Native engine boundary</h2>
+<p>Keep the official executable, matching resources and measured hashes explicit. The wrapper's framework migration does not update or rebuild Orca. Preserve timeout/process-group cleanup, private datadir/TMPDIR behavior, captured diagnostics and the explicit compatibility flag.</p>
+<p>Use the native CLI for the operations it exposes. Editing 3MF configuration/modifiers remains a document operation followed by a fresh slice. Network methods present in the desktop application's Moonraker client are not implicitly available through the CLI.</p>
+<p>Record a capability inventory mapping each existing MCP operation to a document edit, native CLI operation or retained-artifact query and its regression evidence. This inventory must not imply parity with every desktop GUI feature or every Moonraker endpoint.</p>
+<h2 id="preserved-data-concurrency-and-errors">Preserved data, concurrency and errors</h2>
+<ul>
+<li>Preserve canonical source/preset hashes, component roots, object/part IDs, paint, transforms and unknown archive members. Successful edits invalidate old sliced data exactly as before.</li>
+<li>Preserve existing artifact layouts and reopen retained projects/jobs. Schema migrations, if required, must be explicit, tested and reversible; do not discard history during a package move.</li>
+<li>Capture the revision being sliced. A concurrent later edit must not change that slice's input. Native work stays serialized while unrelated reads remain available.</li>
+<li>Preserve stale-SHA rejection, atomic batches and existing error meanings across MCP, REST and CLI. Framework-specific exception formatting must not leak credentials or replace native diagnostics.</li>
+<li>Consolidate line-range validation and extraction while keeping REST snapshot/hash verification and response resource cleanup. Shared code must not downgrade an adapter's existing integrity guarantees.</li>
+</ul>
+<h2 id="validation-and-acceptance">Validation and acceptance</h2>
+<p>Before changing behavior or dependencies, capture consumer-facing contracts: tool names/input schemas/defaults, resource templates, REST paths/security/errors and CLI entry points. Use these as compatibility regressions, not snapshots of private implementation details.</p>
+<p>Add automated architecture tests that resolve imports and forbid domain-to-framework/infrastructure and application-to-adapter dependencies, including imports used only for annotations. Verify composition through explicit construction; do not substitute a large new service locator for the old coupling.</p>
+<p>Use focused failure/passing regressions for extracted invariants and new ports, then the complete public suite. Preserve HTTP tests for malformed/duplicate credentials and headers, corrupt artifacts, verified snapshots, cancellation/admission and concurrent reads. Add the legacy-client compatibility check for stdio and Streamable HTTP where supported by the existing contract.</p>
+<p>Run wheel/source builds, distribution-boundary checks, Bash syntax validation and the required native <code>--all-tests</code> integration at the final implementation HEAD. Attribute native evidence to that SHA/dirty state, installed engine and fresh run. Keep reports local and publish only sanitized aggregates.</p>
+<p>Acceptance requires all existing behavior tests plus the new architecture/contract tests to pass, the 34 tools/three resource templates/eight REST routes to retain their contracts, and all eleven required native cases to execute. Retain explicit coverage gaps: 689 catalog settings lack native semantic fixtures, auxiliary cooling evidence is OFF-only, and digital tests do not certify GUI equivalence or a physical print.</p>
+<h2 id="delivery-and-review-boundary">Delivery and review boundary</h2>
+<p>This document is the review artifact for the architectural direction. After the owner explicitly approves this written specification, write the implementation plan with dependency order, file ownership and verification gates. The owner then reviews the written plan and confirms the execution approach. Production changes and product-dependency installation wait for those stages; an existing execution-method preference is preserved. Implementation proceeds in the named architecture worktree with Conventional Commits and a PR following the repository contribution workflow.</p>
+<p>The next PR may remain a draft while design/implementation review is pending. It must describe the final delivered scope and actual checks; a committed design is not an implemented architecture.</p>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://gofastmcp.com/getting-started/upgrading/from-mcp-sdk-v1">FastMCP migration from SDK v1</a></li>
+<li><a href="https://gofastmcp.com/servers/composition">FastMCP server composition</a></li>
+<li><a href="https://py.sdk.modelcontextprotocol.io/migration/">Official Python SDK migration</a></li>
+<li><a href="https://github.com/MoraesGil/snapmaker-orca-mcp/blob/main/docs/property-regressions.md">Existing property/native regression contract</a></li>
+<li><a href="https://github.com/MoraesGil/snapmaker-orca-mcp/blob/main/contribution-workflow.md">Repository contribution workflow</a></li>
+</ul>
+      </article>
+      <footer class="footer">Review status: awaiting explicit owner approval. Implementation planning follows approval of this specification.</footer>
+    </main>
+  </div>
+</body>
+</html>
