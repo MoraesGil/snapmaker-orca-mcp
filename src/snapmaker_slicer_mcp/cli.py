@@ -1,14 +1,17 @@
 """Installed CLI and MCP server share one native engine boundary."""
 import argparse
+from collections.abc import Sequence
 import json
 import sys
 from pathlib import Path
 
 from .engine import Engine
-from .service import Slicer, write_json
+from .domain.types.json import json_object
+from .service import write_json
+from .bootstrap import build_slicer
 
 
-def main(argv=None):
+def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="snapmaker-slicer-mcp")
     parser.add_argument("--engine", type=Path, default=Path("engine.json"))
     parser.add_argument("--artifacts", type=Path)
@@ -46,11 +49,11 @@ def main(argv=None):
             args.engine.parent.mkdir(parents=True, exist_ok=True)
             write_json(args.engine, result)
         else:
-            engine = Engine(json.loads(args.engine.read_text()))
+            engine = Engine(json_object(json.loads(args.engine.read_text())))
             if args.command == "status":
                 result = engine.status(check_remote=args.check_updates)
             else:
-                slicer = Slicer(engine, args.artifacts or args.engine.resolve().parent / "artifacts", args.timeout)
+                slicer = build_slicer(engine, args.artifacts or args.engine.resolve().parent / "artifacts", args.timeout)
                 if args.command == "slice":
                     result = slicer.slice_3mf(args.input_3mf, args.plate, args.force, not args.strict_file_version)
                 elif args.command == "recover":
@@ -73,7 +76,7 @@ def main(argv=None):
                         from .server import build_server
                         if not args.no_update_check:
                             engine.status(check_remote=True)
-                        build_server(slicer, args.presets).run(transport="stdio")
+                        build_server(slicer, args.presets).run(transport="stdio", show_banner=False)
                     return
         print(json.dumps(result, indent=2, ensure_ascii=False))
     except (OSError, ValueError, KeyError, RuntimeError, TimeoutError) as error:

@@ -8,7 +8,7 @@ import json
 import os
 from pathlib import Path
 
-import httpx
+import httpx2 as httpx
 import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -32,7 +32,7 @@ async def discovery(session):
                       for resource in (await session.list_resources()).resources],
         'resource_templates': sorted([
             template.model_dump(mode='json', by_alias=True, exclude_none=True)
-            for template in (await session.list_resource_templates()).resourceTemplates],
+            for template in (await session.list_resource_templates()).resource_templates],
             key=lambda t: t['uriTemplate']),
     }
 
@@ -46,7 +46,9 @@ async def error_contract(session):
         ('unknown_tool', 'contract_unknown_tool', {}),
     ]:
         result = await session.call_tool(name, arguments)
-        errors[label] = result.model_dump(mode='json', by_alias=True, exclude_none=True)
+        # SDK2 adds result_type='complete' locally when a legacy peer omits it.
+        # Compare only fields actually present on the wire, including all errors.
+        errors[label] = result.model_dump(mode='json', by_alias=True, exclude_none=True, exclude_unset=True)
     return errors
 
 
