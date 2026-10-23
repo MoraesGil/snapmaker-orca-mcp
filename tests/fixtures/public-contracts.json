@@ -1,0 +1,2431 @@
+{
+  "mcp": {
+    "resource_templates": [
+      {
+        "description": "",
+        "mimeType": "text/plain",
+        "name": "manifest",
+        "uriTemplate": "slicer://jobs/{job_id}/manifest"
+      },
+      {
+        "description": "",
+        "mimeType": "text/plain",
+        "name": "gcode_lines",
+        "uriTemplate": "slicer://jobs/{job_id}/plates/{plate}/lines/{start}/{count}"
+      },
+      {
+        "description": "",
+        "mimeType": "text/plain",
+        "name": "props",
+        "uriTemplate": "slicer://jobs/{job_id}/props"
+      }
+    ],
+    "resources": [],
+    "tools": [
+      {
+        "description": "Add a box centered at absolute object-local XYZ mm before instance transforms.\n\nAffects all instances. Dimensions are positive XYZ mm. Supports regional\nouter_wall_speed, inner_wall_speed, sparse_infill_speed, top_surface_speed\nand internal_solid_infill_speed overrides as explicit arrays (e.g. [20]).\nRe-slice after editing.\n",
+        "inputSchema": {
+          "properties": {
+            "center": {
+              "items": {
+                "type": "number"
+              },
+              "title": "Center",
+              "type": "array"
+            },
+            "changes": {
+              "additionalProperties": true,
+              "title": "Changes",
+              "type": "object"
+            },
+            "dimensions": {
+              "items": {
+                "type": "number"
+              },
+              "title": "Dimensions",
+              "type": "array"
+            },
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "name": {
+              "default": "Modifier",
+              "title": "Name",
+              "type": "string"
+            },
+            "object_id": {
+              "title": "Object Id",
+              "type": "integer"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "object_id",
+            "center",
+            "dimensions",
+            "changes"
+          ],
+          "title": "add_modifierArguments",
+          "type": "object"
+        },
+        "name": "add_modifier"
+      },
+      {
+        "description": "Add an empty plate to the working project.",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "name": {
+              "default": "",
+              "title": "Name",
+              "type": "string"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "title": "add_plateArguments",
+          "type": "object"
+        },
+        "name": "add_plate"
+      },
+      {
+        "description": "Edit working settings and force a fresh official native slice of the new revision.",
+        "inputSchema": {
+          "properties": {
+            "changes": {
+              "additionalProperties": true,
+              "title": "Changes",
+              "type": "object"
+            },
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "plate": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Plate"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "changes"
+          ],
+          "title": "apply_and_sliceArguments",
+          "type": "object"
+        },
+        "name": "apply_and_slice"
+      },
+      {
+        "description": "Arrange a plate with the native engine; 0 reorganizes all unlocked plates.\n\nAll-plate arrangement persists new plate counts and memberships.\nA single-plate arrangement must fit that plate; overflow fails atomically.\n",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "plate": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Plate"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "title": "arrange_plateArguments",
+          "type": "object"
+        },
+        "name": "arrange_plate"
+      },
+      {
+        "description": "Orient selected/explicit plate objects; 0 selects all unlocked plates.",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "plate": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Plate"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "title": "auto_orientArguments",
+          "type": "object"
+        },
+        "name": "auto_orient"
+      },
+      {
+        "description": "Remove the specified object from the working copy; preserves the input project.",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "object_id": {
+              "title": "Object Id",
+              "type": "integer"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "object_id"
+          ],
+          "title": "delete_objectArguments",
+          "type": "object"
+        },
+        "name": "delete_object"
+      },
+      {
+        "description": "Remove a working plate, parking its objects off-bed; retain at least one plate.\n\nGeometry is preserved. Use move_object_to_plate to restore parked objects.\n",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "plate": {
+              "title": "Plate",
+              "type": "integer"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "plate"
+          ],
+          "title": "delete_plateArguments",
+          "type": "object"
+        },
+        "name": "delete_plate"
+      },
+      {
+        "description": "Delete an artifact draft only; cannot remove installed/canonical presets.",
+        "inputSchema": {
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "type": {
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name"
+          ],
+          "title": "delete_presetArguments",
+          "type": "object"
+        },
+        "name": "delete_preset"
+      },
+      {
+        "description": "Describe a setting from the Snapmaker source catalog, including schema version.",
+        "inputSchema": {
+          "properties": {
+            "key": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          "required": [
+            "key"
+          ],
+          "title": "describe_settingArguments",
+          "type": "object"
+        },
+        "name": "describe_setting"
+      },
+      {
+        "description": "Duplicate a complete object while preserving its component meshes and painting.",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "object_id": {
+              "title": "Object Id",
+              "type": "integer"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "object_id"
+          ],
+          "title": "duplicate_objectArguments",
+          "type": "object"
+        },
+        "name": "duplicate_object"
+      },
+      {
+        "description": "Edit an artifact draft only. Installed/canonical presets remain read-only.",
+        "inputSchema": {
+          "properties": {
+            "allow_custom_gcode": {
+              "default": false,
+              "title": "Allow Custom Gcode",
+              "type": "boolean"
+            },
+            "changes": {
+              "additionalProperties": true,
+              "title": "Changes",
+              "type": "object"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "type": {
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "changes"
+          ],
+          "title": "edit_presetArguments",
+          "type": "object"
+        },
+        "name": "edit_preset"
+      },
+      {
+        "description": "Apply several edits atomically, each with an operation name and its arguments.\n\nSupports set_config, set_object_config, add_modifier, duplicate/delete/transform_object,\nadd/delete_plate, move_object_to_plate, arrange_plate, auto_orient,\nset_height_range, set_layer_height and reset_layer_height. Failure leaves\nthe current revision unchanged; every successful edit needs a fresh slice.\n",
+        "inputSchema": {
+          "properties": {
+            "allow_custom_gcode": {
+              "default": false,
+              "title": "Allow Custom Gcode",
+              "type": "boolean"
+            },
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "operations": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "title": "Operations",
+              "type": "array"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "operations"
+          ],
+          "title": "edit_projectArguments",
+          "type": "object"
+        },
+        "name": "edit_project"
+      },
+      {
+        "description": "Report exact engine identity and optionally check upstream main.\n\nNew commits produce an update/rebuild notice. Never downloads, compiles,\nswitches or replaces the native engine.\n",
+        "inputSchema": {
+          "properties": {
+            "check_updates": {
+              "default": true,
+              "title": "Check Updates",
+              "type": "boolean"
+            }
+          },
+          "title": "engine_statusArguments",
+          "type": "object"
+        },
+        "name": "engine_status"
+      },
+      {
+        "description": "Read saved project settings (optionally selected keys), with secrets redacted.",
+        "inputSchema": {
+          "properties": {
+            "keys": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Keys"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "title": "get_configArguments",
+          "type": "object"
+        },
+        "name": "get_config"
+      },
+      {
+        "description": "Resolve a named preset's inheritance with hashes/provenance; redact credentials.",
+        "inputSchema": {
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "type": {
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name"
+          ],
+          "title": "get_preset_configArguments",
+          "type": "object"
+        },
+        "name": "get_preset_config"
+      },
+      {
+        "description": "Describe the working project, selected plate, objects and revision.",
+        "inputSchema": {
+          "properties": {
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "title": "get_statusArguments",
+          "type": "object"
+        },
+        "name": "get_status"
+      },
+      {
+        "description": "List stable root object IDs, parts, instance ordinals and transforms.",
+        "inputSchema": {
+          "properties": {
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "title": "list_objectsArguments",
+          "type": "object"
+        },
+        "name": "list_objects"
+      },
+      {
+        "description": "List 1-based plates and their object/instance memberships.",
+        "inputSchema": {
+          "properties": {
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "title": "list_platesArguments",
+          "type": "object"
+        },
+        "name": "list_plates"
+      },
+      {
+        "description": "List declared read-only preset sources and working drafts; no global writes.",
+        "inputSchema": {
+          "properties": {
+            "include_system": {
+              "default": false,
+              "title": "Include System",
+              "type": "boolean"
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Type"
+            }
+          },
+          "title": "list_presetsArguments",
+          "type": "object"
+        },
+        "name": "list_presets"
+      },
+      {
+        "description": "Load a complete saved 3MF into a private, versioned editing workspace.\n\nReturns project_id, revision sha256 and working path. The input and\ninstalled presets are read-only. Use project_id for the editing tools.\n",
+        "inputSchema": {
+          "properties": {
+            "path": {
+              "title": "Path",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "title": "load_modelArguments",
+          "type": "object"
+        },
+        "name": "load_model"
+      },
+      {
+        "description": "Move an object's instances to a 1-based plate, preserving their local offsets.",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "instance_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Instance Id"
+            },
+            "object_id": {
+              "title": "Object Id",
+              "type": "integer"
+            },
+            "plate": {
+              "title": "Plate",
+              "type": "integer"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "object_id",
+            "plate"
+          ],
+          "title": "move_object_to_plateArguments",
+          "type": "object"
+        },
+        "name": "move_object_to_plate"
+      },
+      {
+        "description": "Recover a preserved original for a known generated G-code hash.\n\nThis does not reconstruct a mesh from G-code. Unknown/ambiguous sources\nfail explicitly; recovered source bytes are checked against their hash.\n",
+        "inputSchema": {
+          "properties": {
+            "gcode_file": {
+              "title": "Gcode File",
+              "type": "string"
+            }
+          },
+          "required": [
+            "gcode_file"
+          ],
+          "title": "recover_3mfArguments",
+          "type": "object"
+        },
+        "name": "recover_3mf"
+      },
+      {
+        "description": "Rename an artifact draft only; cannot rename installed/canonical presets.",
+        "inputSchema": {
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "new_name": {
+              "title": "New Name",
+              "type": "string"
+            },
+            "type": {
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name",
+            "new_name"
+          ],
+          "title": "rename_presetArguments",
+          "type": "object"
+        },
+        "name": "rename_preset"
+      },
+      {
+        "description": "Save current working settings as an artifact draft, never over an installed preset.",
+        "inputSchema": {
+          "properties": {
+            "allow_custom_gcode": {
+              "default": false,
+              "title": "Allow Custom Gcode",
+              "type": "boolean"
+            },
+            "detach": {
+              "default": false,
+              "title": "Detach",
+              "type": "boolean"
+            },
+            "filament_slot": {
+              "default": 0,
+              "title": "Filament Slot",
+              "type": "integer"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            },
+            "type": {
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "type",
+            "name"
+          ],
+          "title": "save_presetArguments",
+          "type": "object"
+        },
+        "name": "save_preset"
+      },
+      {
+        "description": "Search Snapmaker setting names, labels and descriptions.",
+        "inputSchema": {
+          "properties": {
+            "limit": {
+              "default": 25,
+              "title": "Limit",
+              "type": "integer"
+            },
+            "query": {
+              "title": "Query",
+              "type": "string"
+            }
+          },
+          "required": [
+            "query"
+          ],
+          "title": "search_settingsArguments",
+          "type": "object"
+        },
+        "name": "search_settings"
+      },
+      {
+        "description": "Select the default target for subsequent editing and slice_project calls.",
+        "inputSchema": {
+          "properties": {
+            "plate": {
+              "title": "Plate",
+              "type": "integer"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "plate"
+          ],
+          "title": "select_plateArguments",
+          "type": "object"
+        },
+        "name": "select_plate"
+      },
+      {
+        "description": "Apply a resolved preset to the working project; filament_slot is 0-based.\n\nExplicit flow_mode selects standard/high_flow values where supported.\nInstalled and canonical presets are never changed.\n",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "filament_slot": {
+              "default": 0,
+              "title": "Filament Slot",
+              "type": "integer"
+            },
+            "flow_mode": {
+              "default": "standard",
+              "title": "Flow Mode",
+              "type": "string"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            },
+            "type": {
+              "title": "Type",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "type",
+            "name"
+          ],
+          "title": "select_presetArguments",
+          "type": "object"
+        },
+        "name": "select_preset"
+      },
+      {
+        "description": "Edit project settings and return a new 3MF revision; never edits global presets.\n\nPass the last sha256 to reject stale edits. Filament arrays retain their\nslot count/order. Custom G-code requires allow_custom_gcode; external\npost-processing scripts and transport credentials are unsupported.\n",
+        "inputSchema": {
+          "properties": {
+            "allow_custom_gcode": {
+              "default": false,
+              "title": "Allow Custom Gcode",
+              "type": "boolean"
+            },
+            "changes": {
+              "additionalProperties": true,
+              "title": "Changes",
+              "type": "object"
+            },
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "changes"
+          ],
+          "title": "set_configArguments",
+          "type": "object"
+        },
+        "name": "set_config"
+      },
+      {
+        "description": "Set/update a Z-band's layer height in mm, relative to the object; clear removes bands.",
+        "inputSchema": {
+          "properties": {
+            "clear": {
+              "default": false,
+              "title": "Clear",
+              "type": "boolean"
+            },
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "layer_height": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Layer Height"
+            },
+            "max_z": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Max Z"
+            },
+            "min_z": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Min Z"
+            },
+            "object_id": {
+              "title": "Object Id",
+              "type": "integer"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "object_id"
+          ],
+          "title": "set_height_rangeArguments",
+          "type": "object"
+        },
+        "name": "set_height_range"
+      },
+      {
+        "description": "Generate adaptive layers (quality 0=finer..1=coarser); reset clears profiles and Z bands.",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "mode": {
+              "title": "Mode",
+              "type": "string"
+            },
+            "object_id": {
+              "title": "Object Id",
+              "type": "integer"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            },
+            "quality": {
+              "default": 0.5,
+              "title": "Quality",
+              "type": "number"
+            }
+          },
+          "required": [
+            "project_id",
+            "object_id",
+            "mode"
+          ],
+          "title": "set_layer_heightArguments",
+          "type": "object"
+        },
+        "name": "set_layer_height"
+      },
+      {
+        "description": "Edit object/part overrides. extruder=0 inherits; 1..N selects a filament slot.",
+        "inputSchema": {
+          "properties": {
+            "changes": {
+              "additionalProperties": true,
+              "title": "Changes",
+              "type": "object"
+            },
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "object_id": {
+              "title": "Object Id",
+              "type": "integer"
+            },
+            "part_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Part Id"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id",
+            "object_id",
+            "changes"
+          ],
+          "title": "set_object_configArguments",
+          "type": "object"
+        },
+        "name": "set_object_config"
+      },
+      {
+        "description": "Slice the saved 3MF using the bound official native engine. 0=all plates.\n\nReturns G-code paths/hashes, original source, settings and inspection\nresource URIs. force bypasses verified cache. allow_newer_file explicitly\nbypasses the native legacy producer-version gate and is recorded in the\nresult/cache identity; disable it for strict version checking.\nNo GUI or printer access.\n",
+        "inputSchema": {
+          "properties": {
+            "allow_newer_file": {
+              "default": true,
+              "title": "Allow Newer File",
+              "type": "boolean"
+            },
+            "force": {
+              "default": false,
+              "title": "Force",
+              "type": "boolean"
+            },
+            "input_3mf": {
+              "title": "Input 3Mf",
+              "type": "string"
+            },
+            "plate": {
+              "default": 0,
+              "title": "Plate",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "input_3mf"
+          ],
+          "title": "slice_3mfArguments",
+          "type": "object"
+        },
+        "name": "slice_3mf"
+      },
+      {
+        "description": "Slice the current working revision; omitted plate uses the selected plate, 0=all.",
+        "inputSchema": {
+          "properties": {
+            "allow_newer_file": {
+              "default": true,
+              "title": "Allow Newer File",
+              "type": "boolean"
+            },
+            "force": {
+              "default": false,
+              "title": "Force",
+              "type": "boolean"
+            },
+            "plate": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Plate"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "project_id"
+          ],
+          "title": "slice_projectArguments",
+          "type": "object"
+        },
+        "name": "slice_project"
+      },
+      {
+        "description": "Apply XYZ translation deltas in mm, rotation deltas in degrees and scale factors.\n\nRotation/scaling preserve the instance pivot. Omit instance_id to edit\nevery instance of the object. Original component meshes remain intact.\n",
+        "inputSchema": {
+          "properties": {
+            "expected_sha256": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected Sha256"
+            },
+            "instance_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Instance Id"
+            },
+            "object_id": {
+              "title": "Object Id",
+              "type": "integer"
+            },
+            "project_id": {
+              "title": "Project Id",
+              "type": "string"
+            },
+            "rotate": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Rotate"
+            },
+            "scale": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Scale"
+            },
+            "translate": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Translate"
+            }
+          },
+          "required": [
+            "project_id",
+            "object_id"
+          ],
+          "title": "transform_objectArguments",
+          "type": "object"
+        },
+        "name": "transform_object"
+      }
+    ]
+  },
+  "mcp_errors": {
+    "invalid_plate": {
+      "content": [
+        {
+          "text": "Error executing tool slice_3mf: plate must be 0 (all) or a positive plate number",
+          "type": "text"
+        }
+      ],
+      "isError": true
+    },
+    "missing_argument": {
+      "content": [
+        {
+          "text": "Error executing tool load_model: 1 validation error for load_modelArguments\npath\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/missing",
+          "type": "text"
+        }
+      ],
+      "isError": true
+    },
+    "unknown_project": {
+      "content": [
+        {
+          "text": "Error executing tool get_status: Invalid project_id",
+          "type": "text"
+        }
+      ],
+      "isError": true
+    },
+    "unknown_tool": {
+      "content": [
+        {
+          "text": "Unknown tool: contract_unknown_tool",
+          "type": "text"
+        }
+      ],
+      "isError": true
+    }
+  },
+  "rest_errors": {
+    "invalid_job": {
+      "body": {
+        "error": {
+          "code": "invalid_job",
+          "message": "Job ID must contain 32 lowercase hexadecimal characters"
+        }
+      },
+      "status": 400
+    },
+    "invalid_schema": {
+      "body": {
+        "error": {
+          "code": "invalid_request",
+          "details": [
+            {
+              "loc": [
+                "input_3mf"
+              ],
+              "msg": "Field required",
+              "type": "missing"
+            }
+          ]
+        }
+      },
+      "status": 422
+    },
+    "unauthorized": {
+      "body": {
+        "error": "Unauthorized"
+      },
+      "status": 401
+    },
+    "unknown_job": {
+      "body": {
+        "error": {
+          "code": "not_found",
+          "message": "Completed job is unavailable"
+        }
+      },
+      "status": 404
+    },
+    "wrong_host": {
+      "body": {
+        "error": "Invalid Host"
+      },
+      "status": 421
+    },
+    "wrong_origin": {
+      "body": {
+        "error": "Invalid Origin"
+      },
+      "status": 403
+    }
+  },
+  "rest_openapi": {
+    "components": {
+      "schemas": {
+        "SliceRequest": {
+          "additionalProperties": false,
+          "properties": {
+            "allow_newer_file": {
+              "default": true,
+              "title": "Allow Newer File",
+              "type": "boolean"
+            },
+            "force": {
+              "default": false,
+              "title": "Force",
+              "type": "boolean"
+            },
+            "input_3mf": {
+              "minLength": 1,
+              "title": "Input 3Mf",
+              "type": "string"
+            },
+            "plate": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Plate",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "input_3mf"
+          ],
+          "title": "SliceRequest",
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "bearerAuth": {
+          "scheme": "bearer",
+          "type": "http"
+        }
+      }
+    },
+    "info": {
+      "title": "Agentic Slicer \u2014 Snapmaker Orca REST",
+      "version": "0.4.0"
+    },
+    "openapi": "3.1.0",
+    "paths": {
+      "/api/v1/engine": {
+        "get": {
+          "parameters": [],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Report local bound engine identity"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request or unsupported project"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Bearer authentication required"
+            },
+            "403": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Origin rejected"
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Input, completed job or plate unavailable"
+            },
+            "409": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Artifact or bound engine conflict"
+            },
+            "421": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Host rejected"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid JSON schema"
+            },
+            "502": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process failed"
+            },
+            "503": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Service filesystem unavailable"
+            },
+            "504": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process timed out"
+            }
+          },
+          "summary": "Report local bound engine identity"
+        }
+      },
+      "/api/v1/jobs/{job_id}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "job_id",
+              "required": true,
+              "schema": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Read a completed slice manifest"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request or unsupported project"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Bearer authentication required"
+            },
+            "403": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Origin rejected"
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Input, completed job or plate unavailable"
+            },
+            "409": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Artifact or bound engine conflict"
+            },
+            "421": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Host rejected"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid JSON schema"
+            },
+            "502": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process failed"
+            },
+            "503": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Service filesystem unavailable"
+            },
+            "504": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process timed out"
+            }
+          },
+          "summary": "Read a completed slice manifest"
+        }
+      },
+      "/api/v1/jobs/{job_id}/plates/{plate}/gcode": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "job_id",
+              "required": true,
+              "schema": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              }
+            },
+            {
+              "in": "path",
+              "name": "plate",
+              "required": true,
+              "schema": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "text/x.gcode": {
+                  "schema": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                }
+              },
+              "description": "Download verified G-code"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request or unsupported project"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Bearer authentication required"
+            },
+            "403": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Origin rejected"
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Input, completed job or plate unavailable"
+            },
+            "409": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Artifact or bound engine conflict"
+            },
+            "421": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Host rejected"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid JSON schema"
+            },
+            "502": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process failed"
+            },
+            "503": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Service filesystem unavailable"
+            },
+            "504": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process timed out"
+            }
+          },
+          "summary": "Download verified G-code"
+        }
+      },
+      "/api/v1/jobs/{job_id}/plates/{plate}/lines": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "job_id",
+              "required": true,
+              "schema": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              }
+            },
+            {
+              "in": "path",
+              "name": "plate",
+              "required": true,
+              "schema": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            {
+              "in": "query",
+              "name": "start",
+              "schema": {
+                "default": 1,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            {
+              "in": "query",
+              "name": "count",
+              "schema": {
+                "default": 200,
+                "maximum": 1000,
+                "minimum": 1,
+                "type": "integer"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Read bounded verified G-code lines"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request or unsupported project"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Bearer authentication required"
+            },
+            "403": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Origin rejected"
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Input, completed job or plate unavailable"
+            },
+            "409": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Artifact or bound engine conflict"
+            },
+            "421": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Host rejected"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid JSON schema"
+            },
+            "502": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process failed"
+            },
+            "503": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Service filesystem unavailable"
+            },
+            "504": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process timed out"
+            }
+          },
+          "summary": "Read bounded verified G-code lines"
+        }
+      },
+      "/api/v1/jobs/{job_id}/props": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "job_id",
+              "required": true,
+              "schema": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Read verified native properties"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request or unsupported project"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Bearer authentication required"
+            },
+            "403": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Origin rejected"
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Input, completed job or plate unavailable"
+            },
+            "409": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Artifact or bound engine conflict"
+            },
+            "421": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Host rejected"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid JSON schema"
+            },
+            "502": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process failed"
+            },
+            "503": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Service filesystem unavailable"
+            },
+            "504": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process timed out"
+            }
+          },
+          "summary": "Read verified native properties"
+        }
+      },
+      "/api/v1/jobs/{job_id}/source": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "job_id",
+              "required": true,
+              "schema": {
+                "pattern": "^[0-9a-f]{32}$",
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "content": {
+                "model/3mf": {
+                  "schema": {
+                    "format": "binary",
+                    "type": "string"
+                  }
+                }
+              },
+              "description": "Download the verified preserved source"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request or unsupported project"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Bearer authentication required"
+            },
+            "403": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Origin rejected"
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Input, completed job or plate unavailable"
+            },
+            "409": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Artifact or bound engine conflict"
+            },
+            "421": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Host rejected"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid JSON schema"
+            },
+            "502": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process failed"
+            },
+            "503": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Service filesystem unavailable"
+            },
+            "504": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process timed out"
+            }
+          },
+          "summary": "Download the verified preserved source"
+        }
+      },
+      "/api/v1/openapi.json": {
+        "get": {
+          "parameters": [],
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Read this authenticated API description"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request or unsupported project"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Bearer authentication required"
+            },
+            "403": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Origin rejected"
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Input, completed job or plate unavailable"
+            },
+            "409": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Artifact or bound engine conflict"
+            },
+            "421": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Host rejected"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid JSON schema"
+            },
+            "502": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process failed"
+            },
+            "503": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Service filesystem unavailable"
+            },
+            "504": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process timed out"
+            }
+          },
+          "summary": "Read this authenticated API description"
+        }
+      },
+      "/api/v1/slices": {
+        "post": {
+          "description": "Synchronous. Configure client timeout for native execution plus queue wait. Disconnection does not cancel native execution.",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SliceRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Completed native result or verified cache hit"
+            },
+            "400": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid request or unsupported project"
+            },
+            "401": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Bearer authentication required"
+            },
+            "403": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Origin rejected"
+            },
+            "404": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Input, completed job or plate unavailable"
+            },
+            "409": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Artifact or bound engine conflict"
+            },
+            "421": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Host rejected"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Invalid JSON schema"
+            },
+            "502": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process failed"
+            },
+            "503": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Service filesystem unavailable"
+            },
+            "504": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              },
+              "description": "Native process timed out"
+            }
+          },
+          "summary": "Slice a saved 3MF and wait for its completed native result"
+        }
+      }
+    },
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ],
+    "servers": [
+      {
+        "url": "/"
+      }
+    ]
+  }
+}
