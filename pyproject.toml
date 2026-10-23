@@ -17,7 +17,11 @@ Repository = "https://github.com/MoraesGil/snapmaker-orca-mcp"
 Issues = "https://github.com/MoraesGil/snapmaker-orca-mcp/issues"
 
 [project.optional-dependencies]
-test = ["pytest>=8,<9", "pytest-asyncio>=0.24,<2"]
+test = [
+    "mypy>=1.18,<3",
+    "pytest>=8,<9",
+    "pytest-asyncio>=0.24,<2",
+]
 
 [project.scripts]
 snapmaker-slicer-mcp = "snapmaker_slicer_mcp.cli:main"
@@ -27,3 +31,11 @@ snapmaker-slicer-mcp = "snapmaker_slicer_mcp.cli:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/snapmaker_slicer_mcp"]
+strict = true
+disallow_any_explicit = true
+disallow_any_unimported = true
+warn_unreachable = true
