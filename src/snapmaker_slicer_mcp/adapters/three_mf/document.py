@@ -16,11 +16,11 @@ import uuid
 import zipfile
 from pathlib import Path
 from collections.abc import Sequence
-from typing import NamedTuple
+from typing import TypeAlias
 from xml.etree import ElementTree as ET
 from .xml import XML_LOCK
 
-from ...domain.types.json import JsonValue, JsonObject, json_object
+from ...domain.types.json import JsonValue, JsonObject, json_object, decode_object
 from ...domain.types.values import ObjectId, XYZ, BoxDimensions, HeightBand
 from ...domain.entities.project import (
     PlateRecord, ObjectRecord, ProjectDescription, ModifierRecord,
@@ -28,12 +28,7 @@ from ...domain.entities.project import (
 )
 
 
-class TreeState(NamedTuple):
-    tag: object
-    attributes: tuple[tuple[str, str], ...]
-    text: str | None
-    tail: str | None
-    children: tuple["TreeState", ...]
+TreeState: TypeAlias = tuple[object, tuple[tuple[str, str], ...], str | None, str | None, tuple['TreeState', ...]]
 
 
 CORE = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
@@ -167,7 +162,7 @@ def _read_xml(data: bytes) -> tuple[ET.Element, list[tuple[str, str]]]:
 def _tree_state(root: ET.Element) -> TreeState:
     # ET's serializer uses a process-wide prefix registry. Structural comparison
     # must stay independent of a different project's namespace registrations.
-    return TreeState(root.tag, tuple(root.attrib.items()), root.text, root.tail,
+    return (root.tag, tuple(root.attrib.items()), root.text, root.tail,
             tuple(_tree_state(child) for child in root))
 
 
@@ -228,7 +223,7 @@ class Project:
         self.settings, settings_ns = _read_xml(self.data.get(SETTINGS, b"<config/>"))
         self._namespaces = {self._model_name: model_ns, SETTINGS: settings_ns}
         self._initial_xml = {self._model_name: _tree_state(self.model), SETTINGS: _tree_state(self.settings)}
-        self.config = json_object(json.loads(self.data.get(CONFIG, b"{}")), "Project settings")
+        self.config = decode_object(self.data.get(CONFIG, b"{}"), "Project settings")
         if not isinstance(self.config, dict):
             raise ValueError("Project settings must be a JSON object")
         self._initial_config = copy.deepcopy(self.config)

@@ -14,7 +14,7 @@ from ...application.contracts.artifacts import GcodeLines
 from ...application.contracts.slicing import SliceRequest, SliceWorkspace, SourceSnapshot
 from ...application.services.lines import bounded_lines
 from ...domain.entities.slicing import JobManifest, PlateRecord
-from ...domain.types.json import JsonObject, JsonValue, is_json_value, json_object
+from ...domain.types.json import JsonObject, JsonValue, json_object, decode_json, decode_object
 from ..orca.engine import file_hash
 
 
@@ -46,7 +46,7 @@ def validate_project(path: Path) -> None:
                 continue
             data = archive.read(entry)
             try:
-                config: object = json.loads(data)
+                config = decode_json(data)
             except (ValueError, UnicodeDecodeError):
                 try:
                     root = ElementTree.fromstring(data)
@@ -55,8 +55,6 @@ def validate_project(path: Path) -> None:
                 if any(n.get('key') == 'post_process' and n.get('value', '').strip() for n in root.iter()):
                     raise ValueError('External post-processing is unsupported by the native slice contract')
                 continue
-            if not is_json_value(config):
-                raise ValueError('Project configuration must contain JSON values')
             _reject_post_process(config)
 
 
@@ -120,7 +118,7 @@ class FilesystemArtifacts:
         path = self.root / 'runs' / job_id / 'result.json'
         if not path.is_file():
             raise ValueError('Generated job is unavailable')
-        result = json_object(json.loads(path.read_text()), 'Generated job record')
+        result = decode_object(path.read_text(), 'Generated job record')
         if result.get('job_id') != job_id:
             raise ValueError('Generated job record is invalid')
         if not _manifest(result):
@@ -146,7 +144,7 @@ class FilesystemArtifacts:
         if not cache.is_file():
             return None
         try:
-            pointer = json_object(json.loads(cache.read_text()))
+            pointer = decode_object(cache.read_text())
             job_id = pointer['job_id']
             if not isinstance(job_id, str):
                 return None
@@ -182,9 +180,7 @@ class FilesystemArtifacts:
         numbers = [int(p.stem.split('_')[1]) for p in files]
         if request.plate and numbers != [request.plate]:
             raise RuntimeError(f'Native output plate mismatch; diagnostics: {job}')
-        native_config: object = json.loads((job / 'native-settings.json').read_text())
-        if not is_json_value(native_config):
-            raise ValueError('Native settings must contain JSON values')
+        native_config = decode_json((job / 'native-settings.json').read_text())
         props: JsonObject = {
             'scope': 'native_global_export_and_per_plate_config_block; final per-region values are not exhaustively exported',
             'native_global': native_config,

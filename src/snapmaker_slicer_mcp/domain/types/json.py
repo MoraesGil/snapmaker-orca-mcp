@@ -1,12 +1,28 @@
 """Explicit recursive JSON values, validated at dynamic-data boundaries."""
 from __future__ import annotations
 
-from typing import TypeAlias, TypeGuard
+import json
+from typing import TypeAlias, TypeGuard, cast
 from typing_extensions import TypeAliasType
 
 JsonScalar: TypeAlias = str | int | float | bool | None
 JsonValue = TypeAliasType('JsonValue', 'str | int | float | bool | None | list[JsonValue] | dict[str, JsonValue]')
 JsonObject: TypeAlias = dict[str, JsonValue]
+
+
+def decode_json(data: str | bytes) -> JsonValue:
+    # The stdlib default decoder (no hooks/custom decoders) only constructs the
+    # recursive JSON primitives above. Its annotation is Any; this one parser
+    # boundary cast avoids rescanning the already-decoded tree. Generic Python
+    # inputs still require is_json_value/json_object below.
+    return cast(JsonValue, json.loads(data))
+
+
+def decode_object(data: str | bytes, label: str = 'JSON value') -> JsonObject:
+    value = decode_json(data)
+    if not isinstance(value, dict):
+        raise ValueError(f'{label} must be a JSON object')
+    return value
 
 
 def is_json_value(value: object) -> TypeGuard[JsonValue]:

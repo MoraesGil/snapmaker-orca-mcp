@@ -8,7 +8,7 @@ import threading
 import uuid
 from contextlib import AbstractContextManager
 from pathlib import Path
-from ...domain.types.json import JsonObject, JsonValue, json_object, is_json_value
+from ...domain.types.json import JsonObject, JsonValue, json_object, is_json_value, decode_object
 from ...domain.settings.values import text, integer
 from ...application.contracts.projects import ProjectDocument
 from ...application.contracts.presets import EngineIdentity
@@ -66,7 +66,7 @@ class FilesystemRevisionRepository:
         if not re.fullmatch(r'[0-9a-f]{32}', project_id):
             raise ValueError('Invalid project_id')
         path = self.root / project_id / 'state.json'
-        state = json_object(json.loads(path.read_text()))
+        state = decode_object(path.read_text())
         current = Path(text(state['path']))
         if current.parent != path.parent or file_hash(current) != state['sha256']:
             raise ValueError('Working project changed outside the editor')

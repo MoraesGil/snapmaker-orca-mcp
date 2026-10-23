@@ -8,7 +8,7 @@ import json
 from importlib.resources import files
 from pathlib import Path
 from typing import Protocol
-from .domain.types.json import JsonObject, JsonValue, json_object
+from .domain.types.json import JsonObject, JsonValue, json_object, decode_object
 from .domain.settings.normalization import (
     _redact as _redact, _transport as _transport, _VECTORS as _VECTORS,
     normalize_filament_profile as normalize_profile,
@@ -24,7 +24,7 @@ class PresetEngine(EngineIdentity, Protocol):
 
 @functools.lru_cache(maxsize=1)
 def _schema_doc() -> JsonObject:
-    return json_object(json.loads(files('snapmaker_slicer_mcp').joinpath('data/settings.json').read_text(encoding='utf-8')))
+    return decode_object(files('snapmaker_slicer_mcp').joinpath('data/settings.json').read_text(encoding='utf-8'))
 
 def load_schema() -> dict[str, JsonObject]:
     return copy.deepcopy({key: json_object(value) for key, value in _schema_doc().items() if not key.startswith('_')})
