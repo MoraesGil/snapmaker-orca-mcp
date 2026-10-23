@@ -2,6 +2,45 @@
 
 This record separates Python/MCP checks, real native slicing and physical printing. No printer operation or GUI-equivalence certification is implied by a passing test suite.
 
+## Optional custom tower plugin (2026-10-23)
+
+The required `run_native_regressions.py --all-tests` run on the feature tree
+based on `dde96a9` (dirty feature checkout, before its delivery commit) passed
+**1,305 tests with 1 skip** in 229.10 seconds. All **16 required native cases**
+ran: the existing eleven properties/modifier cases plus mono, dual, three model
+colours, inverted PETG/PLA roles and a real MCP stdio custom-tower call. The only
+skip was the absent historical private fixture; no native case was skipped.
+
+The macOS ARM64 engine was official Snapmaker Orca 2.4.1, operator-bound source
+`9bf2f18eaff7cc0655cbdeef6a215660085ecb0f`, executable SHA-256
+`6a6d765161bfcf37649cbcd14833bdf36592457c7252acd0c980adaadfc16b7c`.
+The paired JSON/JUnit records retain resource hashes, wrapper identity/dirty
+state and per-case results locally; they are not distributed with private paths.
+
+The public synthetic tapered model uses 90 shared layers. Role permutations
+exercise 1–3 model tools plus an incompatible interface tool, including a model
+without T0 and the reverse material roles. Native gates inspect complete phases
+after changes, contour/infill including bridges, real positive extrusion,
+fixed bed/nozzle targets and auxiliary-off commands. Four role fixtures use a
+1 mm³ comparison budget; the MCP workflow requests **12 mm³ per toolchange**.
+The mono test changes the real model position and recalculates, replacing exactly
+one auxiliary. It also mutates staging after native snapshot creation and checks
+that publication uses the checked native bytes. Sources remain byte-identical.
+
+Additional synthetic regressions cover signed-auxiliary integrity, a real model
+named tower, ordinal ranges/cut/brim/profile preservation, shared REST/MCP CAS
+locking, imported/stale tower rejection, extra tower-only changes, swapped
+temperatures by height, first-layer brim attribution, enabled demo instances and
+mesh/scale identity, cross-plate bed protection and bounded hybrid responses.
+Regular HTTP authentication/transport tests pass with the plugin disabled;
+native custom-tower acceptance exercised stdio, not a live shared HTTP deployment.
+
+`bash -n`, wheel/sdist build, distribution-content checks and `git diff --check`
+also passed. The optional browser trial was recorded as not applicable because
+the feature has no browser UI. Actual ranker/LLM endpoints, arbitrary unsupported
+projects, physical cleaning/adhesion/strength/skip and firmware macro interiors
+were not validated. See [the supported domain and usage](docs/custom-tower.md).
+
 ## Repeatable macOS property regressions (2026-10-22)
 
 The local `props_test_branch` adds a frozen **699-setting contract matrix**:

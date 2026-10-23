@@ -79,6 +79,7 @@ class Slicer:
         (self.root / "runs").mkdir(parents=True, exist_ok=True)
         (self.root / "cache").mkdir(exist_ok=True)
         self._lock = threading.Lock()
+        self._editor_lock = threading.RLock()
         self._admission = asyncio.Lock()
 
     async def run_slice(self, function, *args, **kwargs):
