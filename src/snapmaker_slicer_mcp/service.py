@@ -14,6 +14,8 @@ import threading
 import time
 import uuid
 import zipfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -80,6 +82,12 @@ class Slicer:
         (self.root / "cache").mkdir(exist_ok=True)
         self._lock = threading.Lock()
         self._admission = asyncio.Lock()
+
+    @contextmanager
+    def native_session(self) -> Iterator[None]:
+        """Serialize a native layout operation with native slicing."""
+        with self._lock:
+            yield
 
     async def run_slice(self, function, *args, **kwargs):
         """Queue adapter calls without occupying threads needed by read operations."""
