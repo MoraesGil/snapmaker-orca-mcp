@@ -1,0 +1,22 @@
+{
+  "key": "enable_support",
+  "batch": 2,
+  "valid": [
+    {
+      "value": true,
+      "normalized": "1",
+      "xml": "1"
+    },
+    {
+      "value": false,
+      "normalized": "0",
+      "xml": "0"
+    }
+  ],
+  "invalid": [
+    "yes",
+    2,
+    null,
+    ""
+  ]
+}

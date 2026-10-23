@@ -63,6 +63,12 @@ Every successful geometry/settings edit returns a new private 3MF revision and i
 
 `set_object_config` supports a whole object or a specified `part_id`. Its `extruder=0` means inherit; `1..N` selects a logical material slot. `transform_object` uses translation deltas in millimeters, rotation deltas in degrees and scale factors, retaining the instance pivot.
 
+`add_modifier` creates a box in the object's **local** XYZ coordinates with
+positive millimeter `dimensions` and allowlisted regional speed overrides.
+All instances of the root share that volume. Speed values are explicit arrays
+matching existing process flow variants. It is also an `edit_project` operation;
+see the [complete coordinate and array example](property-regressions.md#modifier-coordinates-and-scope).
+
 ## Plates and variable layers
 
 - Plate numbers are **1-based**. An omitted plate generally uses the selected plate; `plate=0` applies to all applicable/unlocked plates.

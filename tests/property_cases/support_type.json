@@ -1,0 +1,22 @@
+{
+  "key": "support_type",
+  "batch": 2,
+  "valid": [
+    {
+      "value": "tree(auto)",
+      "normalized": "tree(auto)",
+      "xml": "tree(auto)"
+    },
+    {
+      "value": "normal(auto)",
+      "normalized": "normal(auto)",
+      "xml": "normal(auto)"
+    }
+  ],
+  "invalid": [
+    "tree",
+    "invalid-enum",
+    true,
+    1
+  ]
+}

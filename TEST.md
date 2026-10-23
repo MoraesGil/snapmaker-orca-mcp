@@ -2,6 +2,74 @@
 
 This record separates Python/MCP checks, real native slicing and physical printing. No printer operation or GUI-equivalence certification is implied by a passing test suite.
 
+## Repeatable macOS property regressions (2026-10-22)
+
+The local `props_test_branch` adds a frozen **699-setting contract matrix**:
+672 accepted-setting edits with saved-3MF/source checks and 27 intentional
+policy rejections. The 91 entries in the legacy `unparsed_keys` field are
+within those 699 and mean missing label/tooltip documentation, not unsupported
+types or additional settings. The full schema fingerprint must be updated
+deliberately when source metadata changes.
+
+Ten independently named property branches were integrated in two batches of
+five. Each case contains explicit accepted values, expected normalized strings,
+native XML strings and rejected values. The controller's first combined batch
+passed **1,149 tests with 1 skip**; the second passed **1,258 with 12 skips**
+before the final all-tests runner option was added. Eleven of the latter skips
+were the opt-in native cases; the other is the historical private fixture.
+These are recorded checkpoints, not a substitute for the final required run.
+
+The final required `--all-tests` run at clean wrapper commit `8bad03f` passed
+**1,271 tests with 1 skip** in 108.35 seconds. All eleven native cases ran,
+using 22 fresh slice jobs; the only skip was the absent historical private
+fixture. The paired JSON/JUnit reports remain local. Subsequent contribution
+documentation does not extend the native property coverage described below.
+
+The native harness generates closed public geometry and an overhang fixture,
+resolving only official installed U1/PLA presets. It has paired semantic cases
+for outer/inner wall speed, layer height, wall loops, infill density, support
+enable/type, nozzle temperature and Cool Plate temperature. The auxiliary-fan
+case verifies **OFF-only** commands. A separate box-modifier case observes
+extrusion at **20 mm/s inside** the local box and **60 mm/s outside**, with a
+60 mm/s baseline. Configuration comments alone cannot satisfy these oracles.
+
+| macOS target | Measured / declared identity |
+|---|---|
+| Platform | macOS ARM64, Python 3.12.8 |
+| App version | Snapmaker Orca **2.4.1** |
+| Operator-declared native source | `9bf2f18eaff7cc0655cbdeef6a215660085ecb0f` |
+| Executable SHA-256 | `6a6d765161bfcf37649cbcd14833bdf36592457c7252acd0c980adaadfc16b7c` |
+| Resources SHA-256 | `cc1413839fa305f6759cd73f9ee4890b5cde0504aa0a0bb694c92cdc576e2d72` |
+
+The required runner rejects absent engines, stale reports, missing native
+cases and native skips. A real subprocess regression reproduces the old
+`PYTEST_ADDOPTS=-k test_closed_box` bypass and now requires failure. Each run,
+engine fixture and case must carry the current UUID, with fixture-confirmed
+Git revision/dirty state and engine identity. The motion observer rejects
+relative XYZ (`G91`) and extruding arcs explicitly; the current synthetic
+fixtures use supported linear extrusion. Travel-only arcs update endpoints.
+
+Run every test, including the real engine, on the integration branch:
+
+```sh
+uv sync --frozen --extra test
+uv run --frozen --extra test python scripts/run_native_regressions.py \
+  --all-tests --app "/Applications/Snapmaker Orca.app" \
+  --source-commit 9bf2f18eaff7cc0655cbdeef6a215660085ecb0f \
+  --report .temp/native-regressions.json
+uv run --frozen python scripts/property_coverage.py \
+  --junit .temp/native-regressions.xml \
+  --native-report .temp/native-regressions.json > .temp/property-coverage.json
+```
+
+Retain the resulting JSON and JUnit reports together: they identify the exact
+source revision and actual final counts. Only ten catalog properties currently
+have native fixture evidence; the other **689 have no native semantic fixture**.
+Their contract coverage must not be described as verified G-code effects.
+Even the native cases cover finite values/geometries, not every combination,
+physical print quality or GUI equivalence. See [case format and upgrade
+procedure](docs/property-regressions.md).
+
 ## Reproduce the public tests
 
 From this standalone repository root:
@@ -76,7 +144,7 @@ For this small input, REST took **3.93 s** end to end (**3.24 s** native); the s
 - **GUI equivalence:** native CLI success does not certify the GUI's fully resolved settings or every final per-region override.
 - **Physical printing:** no print quality, material behavior, mechanical fit or physical color/head matching is certified.
 - **Rendering:** no preview renderer or screenshot-based validation is shipped.
-- **Platforms:** Linux amd64 native acceptance is recorded above. Historical macOS acceptance used the separate older `441f73c` binding. Windows and native Linux ARM64 deployment remain unvalidated.
+- **Platforms:** Linux amd64 native acceptance is recorded above. The 2026-10-22 section records native macOS 2.4.1 regressions; earlier macOS acceptance used the separate older `441f73c` binding. Windows and native Linux ARM64 deployment remain unvalidated.
 - **Recovery:** verified association retrieves a retained source; standalone G-code does not reconstruct meshes, painting or hierarchy.
 - **Identity:** binding checks executable/resources, while the supplied source commit remains an operator declaration. Shared libraries are not individually part of that cache identity.
 - **New slices:** timestamps, custom placeholders and observed native path-order variation can change G-code bytes. Exact byte preservation applies to retained artifacts.

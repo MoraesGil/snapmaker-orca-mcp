@@ -463,7 +463,7 @@ def adaptive_project(path, *, sloped=False, ranges=False, modifier=False):
           <component objectid="2" transform="1 0 0 0 1 0 0 0 1 0 0 99"/></components></object>
           <object id="1">{mesh}</object><object id="2">{mesh}</object>'''
         settings = '''<config><object id="11"><part id="1" subtype="normal_part"/>
-          <part id="2" subtype="parameter_modifier"/></object></config>'''
+          <part id="2" subtype="modifier_part"/></object></config>'''
     else:
         resources, settings = f'<object id="11">{mesh}</object>', '<config/>'
     with zipfile.ZipFile(path, 'w') as archive:
