@@ -14,6 +14,9 @@ import json
 import re
 import subprocess
 from pathlib import Path
+from collections.abc import Mapping
+
+from .domain.types.json import JsonObject, JsonScalar, json_object
 
 
 _ADD_RE = re.compile(r'def\s*=\s*this->add\(\s*"([^"]+)"\s*,\s*(co\w+)\s*\)')
@@ -94,7 +97,7 @@ def _split_statements(block: str) -> list[str]:
     return out
 
 
-def _num(raw: str):
+def _num(raw: str) -> str | int | float | None:
     raw = raw.strip()
     try:
         return int(raw)
@@ -127,12 +130,12 @@ def _expand_axes(text: str) -> str:
     return text[:loop.start()] + "\n".join(expanded) + text[loop.end():]
 
 
-def parse_print_config(text: str, constants: dict | None = None,
-                       project_schema: tuple[str, int] | None = None) -> tuple[dict[str, dict], list[str]]:
+def parse_print_config(text: str, constants: Mapping[str, JsonScalar] | None = None,
+                       project_schema: tuple[str, int] | None = None) -> tuple[dict[str, JsonObject], list[str]]:
     """Parse native setting records; CLI flags and commented definitions are excluded."""
     text = _expand_axes(_strip_comments(text).split("CLIActionsConfigDef::", 1)[0])
-    constants = dict(constants or {})
-    constants.update({key: _num(value) for key, value in re.findall(
+    resolved_constants = dict(constants or {})
+    resolved_constants.update({key: _num(value) for key, value in re.findall(
         r'\bconst\s+(?:int|float|double)\s+(\w+)\s*=\s*([-+0-9.eE]+)\s*;', text)})
     if project_schema:
         text = text.replace("this->add(project_schema.config_key,", "this->add(" + json.dumps(project_schema[0]) + ",")
@@ -140,27 +143,33 @@ def parse_print_config(text: str, constants: dict | None = None,
     create = list(_ADD_RE.finditer(text))
     bounds = sorted(m.start() for m in _BOUND_RE.finditer(text))
     aliases = {m.group(1): m.group(2) for m in _ALIAS_RE.finditer(text)}
-    settings: dict[str, dict] = {}
+    settings: dict[str, JsonObject] = {}
     for match in create:
         key, ctype = match.group(1), match.group(2)
         end = next((bound for bound in bounds if bound > match.start()), len(text))
-        rec = {"label": None, "category": None, "tooltip": None, "unit": None,
+        rec: JsonObject = {"label": None, "category": None, "tooltip": None, "unit": None,
                "type": ctype, "min": None, "max": None, "mode": None,
                "enum_values": None, "enum_labels": None, "default": None, "nullable": False}
         for statement in _split_statements(text[match.end():end]):
             statement = statement.strip()
             if statement.startswith(("def->enum_values.push_back", "def->enum_values.emplace_back")):
-                value = _join_strings(statement)
-                if value is None:
+                enum_value: JsonScalar = _join_strings(statement)
+                if enum_value is None:
                     symbol = re.search(r'\(\s*(\w+)\s*\)', statement)
-                    value = constants.get(symbol.group(1)) if symbol else None
-                if value is not None:
-                    rec["enum_values"] = (rec["enum_values"] or []) + [value]
+                    enum_value = resolved_constants.get(symbol.group(1)) if symbol else None
+                if enum_value is not None:
+                    values = rec["enum_values"]
+                    if values is not None and not isinstance(values, list):
+                        raise ValueError("Enum values must be a JSON array")
+                    rec["enum_values"] = (values or []) + [enum_value]
                 continue
             if statement.startswith(("def->enum_labels.push_back", "def->enum_labels.emplace_back")):
                 value = _join_strings(statement)
                 if value is not None:
-                    rec["enum_labels"] = (rec["enum_labels"] or []) + [value]
+                    labels = rec["enum_labels"]
+                    if labels is not None and not isinstance(labels, list):
+                        raise ValueError("Enum labels must be a JSON array")
+                    rec["enum_labels"] = (labels or []) + [value]
                 continue
             copied = _ENUM_COPY_RE.match(statement)
             if copied:
@@ -174,7 +183,7 @@ def parse_print_config(text: str, constants: dict | None = None,
                     if value is not None:
                         rec[_STRING_FIELDS[name]] = value
                 elif name in ("min", "max"):
-                    rec[name] = constants.get(rhs.strip(), _num(rhs))
+                    rec[name] = resolved_constants.get(rhs.strip(), _num(rhs))
                 elif name == "mode":
                     rec[name] = rhs.strip() or None
                 continue
@@ -185,9 +194,13 @@ def parse_print_config(text: str, constants: dict | None = None,
     for rec in settings.values():
         for which in ("values", "labels"):
             alias = rec.pop("_copy_%s_from" % which, None)
-            source = settings.get(aliases.get(alias, ""))
-            if source and source.get("enum_%s" % which) is not None:
-                rec["enum_%s" % which] = list(source["enum_%s" % which])
+            source = settings.get(aliases.get(alias, "")) if isinstance(alias, str) else None
+            if source:
+                entries = source.get("enum_%s" % which)
+                if entries is not None:
+                    if not isinstance(entries, list):
+                        raise ValueError("Copied enum entries must be a JSON array")
+                    rec["enum_%s" % which] = list(entries)
     # The native filament overrides are created dynamically, not named add() calls.
     for loop in _NULLABLE_LOOP_RE.finditer(text):
         for key in _STR_RE.findall(loop.group(1)):
@@ -198,13 +211,13 @@ def parse_print_config(text: str, constants: dict | None = None,
     return settings, unparsed
 
 
-def generate_schema(source: Path, source_commit: str) -> dict:
+def generate_schema(source: Path, source_commit: str) -> JsonObject:
     if not re.fullmatch(r"[0-9a-f]{40}", source_commit):
         raise ValueError("Specify the full native engine source commit")
     source = source.resolve()
     root = source.parents[2]
     inputs = [source, source.with_suffix(".hpp"), source.with_name("ProjectSchemaVersion.cpp"), root / "version.inc"]
-    dependencies = {}
+    dependencies: JsonObject = {}
     contents = {}
     for path in inputs:
         data = path.read_bytes()
@@ -223,7 +236,7 @@ def generate_schema(source: Path, source_commit: str) -> dict:
         raise ValueError("Cannot extract native project schema registry")
     version = re.search(r'set\(Snapmaker_VERSION\s+"([^"\\]+)"\)', contents["version.inc"])
     settings, unparsed = parse_print_config(contents[source.name], constants, (registry.group(1), int(registry.group(2))))
-    flow_keys = {}
+    flow_keys: JsonObject = {}
     native_text = _strip_comments(contents[source.name])
     for domain, function in (('filament', 'filament'), ('process', 'process'), ('printer', 'machine')):
         definition = re.search(
@@ -231,22 +244,27 @@ def generate_schema(source: Path, source_commit: str) -> dict:
             r'static const std::vector<std::string>\s+options\s*\{(.*?)\};', native_text, re.DOTALL)
         if definition is None:
             raise ValueError(f"Cannot extract native {domain} flow-variant keys")
-        flow_keys[domain] = _STR_RE.findall(definition.group(1))
-        for key in flow_keys[domain]:
+        variant_keys = _STR_RE.findall(definition.group(1))
+        flow_keys[domain] = [key for key in variant_keys]
+        for key in variant_keys:
             if key not in settings:
                 raise ValueError(f"Unknown native {domain} flow-variant setting: {key}")
             settings[key]['flow_variant_domain'] = domain
     if len(settings) < 600:
         raise ValueError("Native schema unexpectedly contains fewer than 600 settings")
-    return {"_meta": {
+    source_dependency = json_object(dependencies["src/libslic3r/PrintConfig.cpp"])
+    document: JsonObject = {"_meta": {
         "repository": "Snapmaker/OrcaSlicer", "source": "src/libslic3r/PrintConfig.cpp",
-        "source_commit": source_commit, "source_sha256": dependencies["src/libslic3r/PrintConfig.cpp"]["sha256"],
+        "source_commit": source_commit, "source_sha256": source_dependency["sha256"],
         "source_dependencies": dependencies, "native_version": version.group(1) if version else None,
-        "setting_count": len(settings), "unparsed_keys": sorted(unparsed),
+        "setting_count": len(settings), "unparsed_keys": [key for key in sorted(unparsed)],
         "flow_variant_keys": flow_keys,
         "scope": "PrintConfigDef source metadata; default expressions are not runtime values",
         "extractor_origin": "MaxEllis/orcaslicer-mcp@ccfacb43c2fd5a23973bfdabce89c74b2f6933fe",
-    }, **dict(sorted(settings.items()))}
+    }}
+    for key in sorted(settings):
+        document[key] = settings[key]
+    return document
 
 
 def main() -> None:
@@ -258,7 +276,8 @@ def main() -> None:
     doc = generate_schema(args.src, args.source_commit)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(doc, indent=1, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
-    print(f"Extracted {doc['_meta']['setting_count']} native settings at {args.source_commit}")
+    metadata = json_object(doc["_meta"])
+    print(f"Extracted {metadata['setting_count']} native settings at {args.source_commit}")
 
 
 if __name__ == "__main__":

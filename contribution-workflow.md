@@ -37,6 +37,8 @@ Types include `feat`, `fix`, `test`, `docs`, `refactor`, `perf`, `build`, `ci` a
 
 Examples: `feat(modifier): add regional speed overrides`, `fix(slice): reject stale revision hashes`, `docs(workflow): explain worktree cleanup`. Explain non-obvious reasons in the body, wrap it around 72 characters and reference only real issues. Mark breaking changes with `!` and a `BREAKING CHANGE:` footer describing migration.
 
+Keep implementation plans, design drafts, review copies and agent working notes out of version control. Use gitignored `.temp/` for temporary planning, output comparisons and validation reports; do not open PRs solely to publish planning artifacts. Maintain product documentation such as setup, usage, API contracts and testing instructions with the code. Remove accidentally tracked planning files with a normal commit through the contribution workflow; routine cleanup does not require rewriting Git history.
+
 Preserve these project contracts:
 
 - Keep source 3MFs, installed presets and canonical `_GENERIC` sources read-only. Edits belong in private revisions or artifact-local drafts; failed batches must be atomic.
@@ -50,7 +52,9 @@ Preserve these project contracts:
 For a new behavior or bug fix, reproduce the failure with a focused regression before implementing it. Test observable results and edge cases; use doubles at the native-process/transport boundary. Then run the public suite and release checks from the worktree:
 
 ```sh
+uv run --frozen --extra test mypy
 uv run --frozen --extra test pytest tests -q
+uv run --isolated scripts/check_sdk1_interop.py --server-python .venv/bin/python --scratch .temp/sdk1-interop
 bash -n bin/snapmaker-slice.sh
 uv build
 uv run --frozen python scripts/check_distribution.py
