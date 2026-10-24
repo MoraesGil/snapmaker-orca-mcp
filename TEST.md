@@ -2,6 +2,50 @@
 
 This record separates Python/MCP checks, real native slicing and physical printing. No printer operation or GUI-equivalence certification is implied by a passing test suite.
 
+## Strict Python service refactor (2026-10-23)
+
+The final implementation at clean wrapper commit `4b0641f` passed the required
+`--all-tests` run: **1,313 passed, 1 skipped** in 115.07 seconds on macOS ARM64
+with Python 3.14.7. All eleven required native cases executed with the same
+official Snapmaker Orca **2.4.1** engine/source and executable/resource hashes
+recorded below. The sole skip remains the absent historical private fixture.
+Run `8c0ff3b612df49be8faaa2ca92b3bece` has paired local JSON/JUnit reports;
+the fixture and report confirm the wrapper revision, clean state and run ID.
+
+The complete package passes **Mypy 2.4.0 strict checking of 58 source files**.
+Architecture checks reject infrastructure imports from domain/application code,
+and consumer tests verify both accepted annotations and deliberate type errors.
+Wheel/source builds, the shipped `py.typed` marker, distribution boundaries and
+Bash syntax passed. All six Linux/macOS CI combinations with Python 3.11, 3.12
+and 3.13 passed on the implementation revision.
+
+Transport versions were **FastMCP 4.1.3 / MCP SDK 2.3.0**. The unchanged wire
+fixture still contains 34 tools, three resource templates and eight REST OpenAPI
+paths. A separate SDK **1.30.0** consumer passed stdio and authenticated TCP HTTP
+discovery, editing/slicing/recovery, coercion, resource reads, empty results and
+legacy errors. It runs in its own dependency environment. Those interoperability
+cases use a synthetic native-process boundary; the eleven cases above use the
+actual installed native engine.
+
+The deterministic wrapper benchmark measured 18 operation/size combinations,
+with one warmup and ten timed repetitions per case. The same fixture hashes,
+engine identity and method were compared with the pre-refactor baseline. Every
+case remained within the proposed 10% limit: the largest median latency ratio
+was **1.055** and the largest Python peak-allocation ratio was **1.032**.
+An interleaved baseline/current diagnostic also checked the short read/load
+operations with 100 repetitions (ten for the largest load); its largest latency
+ratio was 1.048. OS caching and host load remain uncontrolled, so lower ratios
+are not a general speedup claim. Python allocation measurements exclude the
+native child process; this is neither a transport-latency nor a whole-machine
+memory benchmark. Each size also had one separate forced native slice.
+
+The reports and generated artifacts remain in ignored `.temp/`. The refactor
+does not expand the native property coverage: **ten catalog properties plus one
+modifier case**, finite values/geometries and OFF-only auxiliary-fan checks.
+The other 689 catalog keys still lack native semantic fixtures. This validation
+does not certify GUI equivalence, physical prints or deployment of this branch.
+See [architecture and repeatable commands](docs/architecture.md).
+
 ## Repeatable macOS property regressions (2026-10-22)
 
 The local `props_test_branch` adds a frozen **699-setting contract matrix**:

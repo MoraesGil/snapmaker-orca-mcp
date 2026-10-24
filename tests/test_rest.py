@@ -5,7 +5,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-import httpx
+import httpx2 as httpx
 import pytest
 
 from test_http import TOKEN, make_app, result, session_at
@@ -59,7 +59,7 @@ async def test_rest_and_mcp_reuse_the_same_verified_job_cache(tmp_path):
             resource = await mcp.read_resource(reused['props_uri'])
             assert json.loads(resource.contents[0].text)['native_global']['layer_height'] == '0.2'
             forced = await mcp.call_tool('slice_3mf', {'input_3mf': str(source), 'plate': 1, 'force': True})
-            assert forced.isError
+            assert forced.is_error
 
 
 async def test_slow_rest_slice_keeps_mcp_reads_and_health_available(tmp_path, monkeypatch):

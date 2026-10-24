@@ -104,7 +104,7 @@ def test_mcp_discovery_and_call(tmp_path):
         assert 'add_modifier' in {t.name for t in await server.list_tools()}
         result = await server.call_tool('load_model', {'path':str(project(tmp_path/'input.3mf'))})
         import json
-        state = json.loads(result[0].text)
+        state = json.loads(result.content[0].text)
         result = await server.call_tool('add_modifier', dict(project_id=state['project_id'], object_id=2,
             center=[0,0,0], dimensions=[1,1,1], changes={'outer_wall_speed':[20]}))
         assert 'modifier_part' in str(result)

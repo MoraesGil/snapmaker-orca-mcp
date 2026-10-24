@@ -16,6 +16,7 @@ def main():
         schema = json.loads(archive.read("snapmaker_slicer_mcp/data/settings.json"))
         assert len(schema) - 1 == 699
         assert "snapmaker_slicer_mcp/THIRD_PARTY.md" in names
+        assert "snapmaker_slicer_mcp/py.typed" in names
         assert any("LICENSE" in name for name in names)
         assert not any(name.lower().endswith((".3mf", ".gcode", ".env", ".appimage")) for name in names)
         assert not any("/runtime/" in name or "/artifacts/" in name or "/secrets/" in name for name in names)

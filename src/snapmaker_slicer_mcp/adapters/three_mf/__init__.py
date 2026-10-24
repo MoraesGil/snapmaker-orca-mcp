@@ -1,0 +1,1 @@
+"""Typed boundary components."""

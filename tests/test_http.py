@@ -7,7 +7,7 @@ import time
 from contextlib import AsyncExitStack, asynccontextmanager
 from pathlib import Path
 
-import httpx
+import httpx2 as httpx
 import pytest
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
@@ -36,15 +36,15 @@ async def session_at(url, transport=None, origin=None):
     if origin:
         headers['Origin'] = origin
     async with httpx.AsyncClient(transport=transport, headers=headers, timeout=10) as http:
-        async with streamable_http_client(url, http_client=http) as (read, write, _):
+        async with streamable_http_client(url, http_client=http) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 yield session
 
 
 def result(call):
-    assert not call.isError, call.content
-    return call.structuredContent or json.loads(call.content[0].text)
+    assert not call.is_error, call.content
+    return call.structured_content or json.loads(call.content[0].text)
 
 
 @pytest.mark.parametrize('authorization', [None, '', 'Basic ' + TOKEN, 'Bearer wrong', 'Bearer '])
@@ -159,7 +159,7 @@ async def test_asgi_mcp_shares_project_state_and_keeps_reads_available_during_sl
                                 'changes': {'layer_height': 0.12}, 'expected_sha256': loaded['sha256']}))
                 stale = await two.call_tool('set_config', {'project_id': loaded['project_id'],
                                         'changes': {'layer_height': 0.16}, 'expected_sha256': loaded['sha256']})
-                assert stale.isError
+                assert stale.is_error
             finally:
                 release.set()
             sliced = result(await pending)
@@ -211,7 +211,7 @@ async def test_cli_tcp_serves_three_concurrent_mcp_clients_resources_and_recover
             async def client(index):
                 async with session_at(url + '/mcp', origin='https://trusted.example') as session:
                     assert len((await session.list_tools()).tools) == 34
-                    assert len((await session.list_resource_templates()).resourceTemplates) == 3
+                    assert len((await session.list_resource_templates()).resource_templates) == 3
                     await barrier.wait()
                     if index == 0:
                         loaded = result(await session.call_tool('load_model', {'path': str(source)}))

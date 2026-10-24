@@ -9,6 +9,9 @@ artifacts/
 runtime/
 
 .temp/
+/docs/plans/
+/docs/specs/
+/docs/superpowers/
 /.local/
 .env
 secrets/
