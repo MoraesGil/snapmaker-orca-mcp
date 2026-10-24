@@ -112,6 +112,13 @@ The optional service has additional project editing and output-reading tools.
 They are separate from the Bash slicing command. No GUI automation or automatic
 engine download/update is included.
 
+The opt-in [custom tower plugin](docs/custom-tower.md) adds
+`add_custom_tower` / `custom_tower_status` with `serve --plugin custom-tower`.
+It derives signed, role-based geometry from a fresh native prepass and validates
+complete tower-first toolchanges. Deterministic mode needs no AI models or network;
+optional ranker/LLM endpoints only rank bounded candidates. Physical priming
+quality remains unverified.
+
 Use `load_model` → `set_config` / `edit_project` → `slice_project` to edit a
 private 3MF revision and regenerate G-code. Re-slice after every change.
 The catalog contains **699 extracted settings**; **91 of those keys

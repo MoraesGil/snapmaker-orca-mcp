@@ -9,7 +9,7 @@ from .service import Slicer
 from .editor import Editor
 
 
-def build_server(slicer: Slicer, preset_dirs=()) -> FastMCP:
+def build_server(slicer: Slicer, preset_dirs=(), *, plugins=()) -> FastMCP:
     mcp = FastMCP("Snapmaker Slicer MCP", instructions=(
         "Slice complete saved 3MFs with the official Snapmaker engine. Editing tools only change "
         "private working revisions; preserve source files and installed/canonical _GENERIC presets. "
@@ -281,4 +281,6 @@ def build_server(slicer: Slicer, preset_dirs=()) -> FastMCP:
     def gcode_lines(job_id: str, plate: int, start: int, count: int) -> str:
         return json.dumps(slicer.read_lines(job_id, int(plate), int(start), int(count)), ensure_ascii=False)
 
+    from .plugins import register_plugins
+    register_plugins(plugins, mcp, editor, slicer)
     return mcp

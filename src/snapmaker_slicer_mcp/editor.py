@@ -116,7 +116,7 @@ class Editor:
         self.root = slicer.root / 'projects'
         self.root.mkdir(parents=True, exist_ok=True)
         self.catalog = Catalog(slicer.engine, [Path(p) for p in preset_dirs], slicer.root / 'preset-drafts')
-        self._lock = threading.RLock()
+        self._lock = slicer._editor_lock
 
     def _state(self, project_id):
         if not re.fullmatch(r'[0-9a-f]{32}', project_id):
@@ -428,10 +428,18 @@ class Editor:
                 config = {k: v for k, v in config.items() if k not in ('printer_model', 'printer_technology')}
             return self.catalog.save_preset(type, name, config, detach, allow_custom_gcode)
 
+    def _check_towers(self, state, target):
+        tower = state.get('custom_tower')
+        if tower and target in (0, tower['plate']) and tower['validated_sha256'] != state['sha256']:
+            raise ValueError('Custom tower is stale; recalculate with add_custom_tower before slicing')
+        from .plugins.custom_tower.receipts import check_receipts
+        check_receipts(Project(Path(state['path'])), state, target, self.slicer.engine.identity())
+
     def slice_project(self, project_id: str, plate=None, force=False, allow_newer_file=True):
         with self._lock:
             state = self._state(project_id)
             target = state['selected_plate'] if plate is None else plate
+            self._check_towers(state, target)
         # Each saved path is an immutable revision; later edits create another file.
         return self.slicer.slice_3mf(state['path'], target, force, allow_newer_file)
 
@@ -439,4 +447,5 @@ class Editor:
         with self._lock:
             edited = self.set_config(project_id, changes, expected_sha256)
             target = edited['selected_plate'] if plate is None else plate
+            self._check_towers(edited, target)
         return {'project': edited, 'slice': self.slicer.slice_3mf(edited['path'], target, force=True)}

@@ -30,6 +30,8 @@ def main(argv=None):
     recovery = commands.add_parser("recover")
     recovery.add_argument("gcode_file")
     serve = commands.add_parser("serve")
+    serve.add_argument("--plugin", action="append", choices=("custom-tower",), default=[],
+                       help="Enable an optional bundled MCP plugin (default: none)")
     serve.add_argument("--no-update-check", action="store_true")
     serve.add_argument("--transport", choices=("stdio", "streamable-http"), default="stdio")
     serve.add_argument("--host", default="127.0.0.1")
@@ -65,7 +67,7 @@ def main(argv=None):
                         if not args.allowed_host and args.port == 80:
                             hosts += ["127.0.0.1", "localhost", "[::1]"]
                         app = build_http_app(slicer, args.presets, auth_token_file=args.auth_token_file,
-                                             allowed_hosts=hosts, allowed_origins=args.allowed_origin)
+                                             allowed_hosts=hosts, allowed_origins=args.allowed_origin, plugins=args.plugin)
                         if not args.no_update_check:
                             engine.status(check_remote=True)
                         uvicorn.run(app, host=args.host, port=args.port, workers=1, access_log=False)
@@ -73,7 +75,7 @@ def main(argv=None):
                         from .server import build_server
                         if not args.no_update_check:
                             engine.status(check_remote=True)
-                        build_server(slicer, args.presets).run(transport="stdio")
+                        build_server(slicer, args.presets, plugins=args.plugin).run(transport="stdio")
                     return
         print(json.dumps(result, indent=2, ensure_ascii=False))
     except (OSError, ValueError, KeyError, RuntimeError, TimeoutError) as error:

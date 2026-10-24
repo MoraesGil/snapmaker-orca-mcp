@@ -57,7 +57,7 @@ class _AccessPolicy:
         return await self.app(scope, receive, send)
 
 
-def build_http_app(slicer, preset_dirs=(), *, auth_token_file=None, allowed_hosts=(), allowed_origins=()):
+def build_http_app(slicer, preset_dirs=(), *, auth_token_file=None, allowed_hosts=(), allowed_origins=(), plugins=()):
     """Build once per process; HTTP clients share the same slicer and editor.
 
     Tokens are read at startup. Restart explicitly to rotate a token. Host values
@@ -66,7 +66,7 @@ def build_http_app(slicer, preset_dirs=(), *, auth_token_file=None, allowed_host
     token = _token_from_file(auth_token_file)
     hosts = _allowlist(allowed_hosts, 'Host', required=True)
     origins = _allowlist(allowed_origins, 'Origin')
-    mcp = build_server(slicer, preset_dirs)
+    mcp = build_server(slicer, preset_dirs, plugins=plugins)
     mcp.settings.stateless_http = True
     mcp.settings.json_response = True
     mcp.settings.transport_security = TransportSecuritySettings(
