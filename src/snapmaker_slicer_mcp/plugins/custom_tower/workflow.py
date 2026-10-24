@@ -13,7 +13,7 @@ from ...service import write_json, validate_project
 from .contracts import TowerOptions
 from .archive import signed_towers, remove_signed, normalize_demo, place, add_to_project
 from .geometry import make_plan, profile
-from .gcode import trace, audit_tower
+from .gcode import trace, audit_tower, Footprint
 from .hybrid import candidate_order
 from .receipts import external_fingerprint, tower_fingerprint, check_receipts
 from .materials import main_material_bed, check_temperatures
@@ -31,7 +31,10 @@ def read_trace(path, project, names=(), brim_boxes=None):
     diameters=[float(x) for x in values(project.config.get('filament_diameter', []))]
     if not diameters or any(not math.isfinite(v) or v<=0 for v in diameters):
         raise ValueError('Explicit filament diameters are required')
-    return trace(Path(path).read_text(),diameters=diameters,tower_names=set(names),brim_boxes=brim_boxes)
+    result=trace(Path(path).read_text(),diameters=diameters,tower_names=set(names),brim_boxes=brim_boxes)
+    if result.fallback_width_depositions:
+        raise ValueError('Native commanded WIDTH is required for deposition occupancy; synthetic fallback is not native evidence')
+    return result
 
 
 def set_sequence(project, plate, result):
@@ -85,17 +88,27 @@ def audit_candidate(before, after, plan, options, *, initial_speed_limit=None):
             limit=initial_speed_limit
         if any(v>limit+.05 for b in tower for v in b.speeds):
             failures.add('tower_speed_exceeded')
-    # Conservative native deposition footprints, including supports and brim.
+    # Sparse commanded bead occupancy includes supports and unlabelled brims.
+    # Aggregate rectangles cannot establish a conflict. Shared occupied strips
+    # are a conservative conflict, not proof of a physical collision.
     for layer in after.layers:
-        tower=[b.bounds for p in layer.phases for b in p.blocks if after.is_tower(b.name)]
-        objects=[b.bounds for p in layer.phases for b in p.blocks if not after.is_tower(b.name)]
+        tower=[b for p in layer.phases for b in p.blocks if after.is_tower(b.name)]
+        objects=[b for p in layer.phases for b in p.blocks if not after.is_tower(b.name)]
         for a in tower:
             for b in objects:
-                d=options.line_width_mm/2
-                if not (a[2]+d<b[0]-d or a[0]-d>b[2]+d or a[3]+d<b[1]-d or a[1]-d>b[3]+d):
+                if (a.volume_mm3>0 and not a.footprint.rows
+                        or b.volume_mm3>0 and not b.footprint.rows):
+                    failures.add('missing_native_deposition_occupancy')
+                    continue
+                # Footprints already include each emitted ;WIDTH and arc
+                # approximation margin, unlike the centerline block bounds.
+                if a.footprint.intersects(b.footprint):
                     failures.add('native_deposition_footprint_conflict')
     return {**audit,'passed':not failures,'failures':sorted(failures),
             'structural_passes':structural,'temperatures':after.temperatures,
+            'occupancy':{'conservative':True,'strip_height_mm':Footprint.pitch,
+                         'arc_sagitta_margin_mm':Footprint.sagitta,
+                         'fallback_width_depositions':after.fallback_width_depositions},
             'external_schedule':after.schedule()}
 
 

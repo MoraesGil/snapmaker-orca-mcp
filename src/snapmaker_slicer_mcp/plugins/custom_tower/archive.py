@@ -9,7 +9,7 @@ import copy
 from xml.etree import ElementTree as ET
 
 from ...project import CORE, IDENTITY, _child, _children, _metadata, _set_metadata, _native_option_value
-from .gcode import SIGNATURE
+from .gcode import SIGNATURE, Footprint
 from .geometry import mesh_groups, profile
 
 
@@ -99,22 +99,31 @@ def place(plan, result, options, printable_area):
         bed = [min(p[0] for p in points), min(p[1] for p in points), max(p[0] for p in points), max(p[1] for p in points)]
     except (ValueError, TypeError):
         raise ValueError('Tower placement currently requires a rectangular printable_area') from None
-    pp=profile(options.maximum_width_mm); margin=options.brim_mm+options.clearance_mm
+    pp=profile(options.maximum_width_mm)
+    margin=options.brim_mm+options.clearance_mm+options.line_width_mm/2
     local=[min(x for x,y in pp)-margin,min(y for x,y in pp)-margin,
            max(x for x,y in pp)+margin,max(y for x,y in pp)+margin]
-    obstacles=[b.bounds for p in result.phases for b in p.blocks if not result.is_tower(b.name)]
+    blocks=[b for p in result.phases for b in p.blocks if not result.is_tower(b.name)]
+    obstacles=[b.bounds for b in blocks]
+    occupied=Footprint()
+    for block in blocks:
+        if block.volume_mm3 > 0 and not block.footprint.rows:
+            raise ValueError('Missing commanded deposition occupancy for tower placement')
+        occupied.update(block.footprint)
     def valid(center):
         x,y=center; bounds=[local[0]+x,local[1]+y,local[2]+x,local[3]+y]
         return (bounds[0]>=bed[0] and bounds[1]>=bed[1] and bounds[2]<=bed[2] and bounds[3]<=bed[3]
-                and all(bounds[2]<b[0] or bounds[0]>b[2] or bounds[3]<b[1] or bounds[1]>b[3] for b in obstacles))
+                and not occupied.intersects_box(bounds))
     if options.center_xy:
-        if not valid(options.center_xy): raise ValueError('Requested tower/brim position collides or leaves the bed')
+        if not valid(options.center_xy):
+            raise ValueError('Requested tower/brim position overlaps conservative occupancy or leaves the bed')
         return list(options.center_xy)
     candidates=[]
     for x in range(math.ceil(bed[0]-local[0]), math.floor(bed[2]-local[2])+1, 4):
         for y in range(math.ceil(bed[1]-local[1]), math.floor(bed[3]-local[3])+1, 4):
             if valid((x,y)): candidates.append([x,y])
-    if not candidates: raise ValueError('Tower/brim cannot fit without moving approved models')
+    if not candidates:
+        raise ValueError('No tower/brim position clears the conservative commanded occupancy without moving approved models')
     # Nearest to the average job footprint, with stable tie breaks.
     cx=sum((b[0]+b[2])/2 for b in obstacles)/len(obstacles)
     cy=sum((b[1]+b[3])/2 for b in obstacles)/len(obstacles)
