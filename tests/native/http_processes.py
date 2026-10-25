@@ -14,8 +14,11 @@ import time
 
 
 def _snapshot():
+    # Linux ps otherwise truncates redirected output to COLUMNS (often 80),
+    # losing the scratch marker and weakening command identity. BSD ps also
+    # supports -ww for unlimited width.
     result = subprocess.run(
-        ['ps', '-axo', 'pid=,ppid=,pgid=,stat=,lstart=,command='],
+        ['ps', '-ww', '-axo', 'pid=,ppid=,pgid=,stat=,lstart=,command='],
         capture_output=True, text=True, check=True, timeout=5,
     )
     processes = {}

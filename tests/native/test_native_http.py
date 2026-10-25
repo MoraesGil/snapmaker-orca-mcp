@@ -91,6 +91,8 @@ def test_http_cleanup_owns_detached_native_child_on_failure(tmp_path, early_exit
 
     from .http_processes import ProcessOwner, _snapshot, owned_process
 
+    monkeypatch.setenv('COLUMNS', '80')
+
     if early_exit:
         # Force the monitor to miss the original PPID relationship: cleanup
         # must recover the already orphaned worker by its unique scratch path.
