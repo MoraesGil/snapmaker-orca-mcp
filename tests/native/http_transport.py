@@ -105,7 +105,10 @@ async def server_session(engine, scratch):
             try:
                 process.wait(timeout=10)
             except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass  # The group may exit between wait timeout and signal.
                 process.wait(timeout=10)
             # Kill native descendants even if the server already exited.
             try:
