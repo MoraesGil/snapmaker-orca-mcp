@@ -114,7 +114,9 @@ The server's native workers create separate sessions. Test-only process
 supervision tracks its unique scratch directory, descendant relationships and
 PID start/command identity, then terminates detached workers and waits for its
 server. Controlled Python child-process tests cover timeout and early-parent
-exit cleanup without requiring the slicer.
+exit cleanup without requiring the slicer. Full-width `ps` snapshots preserve
+long commands even with `COLUMNS=80`; regression cases verify this Linux failure
+mode and that changed start-time/command identities never receive signals.
 
 The normal public CI suite runs these lifecycle and pure oracle tests; real
 native tests skip when no official engine was selected. Running the required

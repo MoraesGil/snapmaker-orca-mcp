@@ -4,12 +4,12 @@ This record separates Python/MCP checks, real native slicing and physical printi
 
 ## Native HTTP and third property batch (2026-10-24)
 
-The maintained required suite at clean wrapper commit `f9c6d84`
-passed **1,471 tests with 1 skip** in 218.82 seconds on macOS ARM64
+The maintained required suite at clean wrapper commit `6869187`
+passed **1,473 tests with 1 skip** in 222.68 seconds on macOS ARM64
 with Python 3.12.8. All **17 required native cases** executed against official
 Snapmaker Orca **2.4.1** / `9bf2f18eaff7cc0655cbdeef6a215660085ecb0f`, with the
 unchanged macOS executable/resource hashes recorded below. Current run ID:
-`fc75bcdbed994c2d9015523396e42f1a`. Paired JSON/JUnit and coverage reports remain ignored locally.
+`bdc55d78beab470496874601e607a1f5`. Paired JSON/JUnit and coverage reports remain ignored locally.
 
 Five reviewed property children were integrated as one batch. Their combined
 native/persistence gate passed **347 tests** before the final full run. The new
@@ -26,6 +26,13 @@ official native engine. It verifies G-code semantics, exact resources/recovery,
 source/preset preservation, geometry/layer workflows and rejection cases.
 Detached-worker cleanup has controlled timeout/orphan regressions. The installed
 service and its credentials are not used by this suite.
+
+The first remote CI run exposed truncated Linux `ps` command columns, which
+hid the unique scratch marker from process cleanup. Full-width snapshots now
+preserve command identity. A real long-command regression and both detached
+cleanup cases force `COLUMNS=80`; a separate guard rejects changed process
+start times or commands. The fix was reproduced red/green on Linux, reviewed,
+and included in the complete parent run above without changing timeouts.
 
 Coverage attribution confirms **all 699 catalog contracts executed** and native
 semantic fixtures for **15 catalog properties** plus modifier and HTTP function
