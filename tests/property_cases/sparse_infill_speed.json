@@ -1,0 +1,9 @@
+{
+  "key": "sparse_infill_speed",
+  "batch": 3,
+  "valid": [
+    {"value": [20, 60], "normalized": ["20", "60"], "xml": "20,60"},
+    {"value": [25.5, 80], "normalized": ["25.5", "80"], "xml": "25.5,80"}
+  ],
+  "invalid": [[0, 60], [-1, 60], ["NaN", 60], [true, 60], 20]
+}
