@@ -3,12 +3,9 @@ import asyncio
 from contextlib import asynccontextmanager
 import hashlib
 import json
-import os
 from pathlib import Path
 import secrets
-import signal
 import socket
-import subprocess
 import sys
 import time
 
@@ -17,6 +14,7 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
 from .harness import observe
+from .http_processes import owned_process
 
 
 def digest(path):
@@ -68,15 +66,14 @@ async def server_session(engine, scratch):
     base = f'http://127.0.0.1:{port}'
     root = Path(__file__).resolve().parents[2]
     with (scratch / 'server.log').open('wb') as log:
-        process = subprocess.Popen([
+        with owned_process([
             sys.executable, '-m', 'snapmaker_slicer_mcp.cli', '--engine', str(manifest),
             '--artifacts', str(scratch / 'artifacts'), '--timeout', '120',
             'serve', '--no-update-check', '--transport', 'streamable-http',
             '--host', '127.0.0.1', '--port', str(port), '--auth-token-file', str(token_file),
             '--allowed-host', f'127.0.0.1:{port}',
             '--allowed-origin', 'https://native-regression.example',
-        ], cwd=root, stdout=log, stderr=log, start_new_session=True)
-        try:
+        ], scratch, log, cwd=root) as process:
             async with httpx2.AsyncClient(timeout=150, trust_env=False,
                                          headers={'Authorization': 'Bearer ' + token}) as http:
                 deadline = time.monotonic() + 30
@@ -97,21 +94,3 @@ async def server_session(engine, scratch):
                     async with ClientSession(read, write, read_timeout_seconds=150) as session:
                         await session.initialize()
                         yield session
-        finally:
-            try:
-                os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            try:
-                process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass  # The group may exit between wait timeout and signal.
-                process.wait(timeout=10)
-            # Kill native descendants even if the server already exited.
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass

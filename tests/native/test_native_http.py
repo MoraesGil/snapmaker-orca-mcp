@@ -80,3 +80,56 @@ def test_http_semantic_oracles_reject_missing_and_ignored_output(tmp_path):
         assert_effect('outer_wall_speed', low, low)
     with pytest.raises(AssertionError):
         assert_effect('outer_wall_speed', {'moves': []}, {'moves': []})
+
+
+@pytest.mark.parametrize('early_exit', [False, True])
+def test_http_cleanup_owns_detached_native_child_on_failure(tmp_path, early_exit, monkeypatch):
+    """A real detached worker must exit after failure, even if its parent exited."""
+    import os
+    import sys
+    import time
+
+    from .http_processes import ProcessOwner, _snapshot, owned_process
+
+    if early_exit:
+        # Force the monitor to miss the original PPID relationship: cleanup
+        # must recover the already orphaned worker by its unique scratch path.
+        monkeypatch.setattr(ProcessOwner, "_monitor", lambda owner: owner.stop.wait(30))
+
+    pid_file = tmp_path / 'detached.pid'
+    script = tmp_path / 'parent.py'
+    script.write_text(
+        'import os, pathlib, subprocess, sys, time\n'
+        'child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)", '
+        'str(pathlib.Path(__file__).parent / "owned-child")], start_new_session=True)\n'
+        f'pathlib.Path({str(pid_file)!r}).write_text(str(child.pid))\n'
+        + ('os._exit(0)\n' if early_exit else 'time.sleep(60)\n')
+    )
+    child_pid = None
+    try:
+        with (tmp_path / 'lifecycle.log').open('wb') as log:
+            with pytest.raises(TimeoutError, match='controlled'):
+                with owned_process([sys.executable, str(script)], tmp_path, log) as parent:
+                    deadline = time.monotonic() + 15
+                    while child_pid is None:
+                        try:
+                            child_pid = int(pid_file.read_text())
+                        except (FileNotFoundError, ValueError):
+                            assert time.monotonic() < deadline, 'Detached child did not start'
+                            time.sleep(.02)
+                    assert os.getpgid(child_pid) != parent.pid, 'Worker must own a detached session'
+                    if early_exit:
+                        assert parent.wait(timeout=10) == 0
+                    raise TimeoutError('controlled context failure')
+        assert parent.poll() is not None
+        row = _snapshot().get(child_pid)
+        assert row is None or row[4].startswith('Z'), 'Detached child survived cleanup'
+    finally:
+        # Keep the regression safe even when testing a broken cleanup helper.
+        if child_pid:
+            row = _snapshot().get(child_pid)
+            if row and str(tmp_path / 'owned-child') in row[3]:
+                try:
+                    os.kill(child_pid, 9)
+                except ProcessLookupError:
+                    pass
