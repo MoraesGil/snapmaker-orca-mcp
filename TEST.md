@@ -2,6 +2,50 @@
 
 This record separates Python/MCP checks, real native slicing and physical printing. No printer operation or GUI-equivalence certification is implied by a passing test suite.
 
+## Native HTTP and third property batch (2026-10-24)
+
+The maintained required suite at clean wrapper commit `f9c6d84`
+passed **1,471 tests with 1 skip** in 218.82 seconds on macOS ARM64
+with Python 3.12.8. All **17 required native cases** executed against official
+Snapmaker Orca **2.4.1** / `9bf2f18eaff7cc0655cbdeef6a215660085ecb0f`, with the
+unchanged macOS executable/resource hashes recorded below. Current run ID:
+`fc75bcdbed994c2d9015523396e42f1a`. Paired JSON/JUnit and coverage reports remain ignored locally.
+
+Five reviewed property children were integrated as one batch. Their combined
+native/persistence gate passed **347 tests** before the final full run. The new
+native properties are `sparse_infill_speed`, `top_surface_speed`,
+`internal_solid_infill_speed`, `initial_layer_speed` and `filament_flow_ratio`.
+Oracles inspect actual role/layer feedrates and deposited extrusion; pure
+negative cases reject missing, comment-only, travel-only, wrong-role and
+unchanged output. Source bytes and literal saved-3MF values are checked.
+
+The previously local HTTP acceptance is now maintained under `tests/native`.
+A dedicated ephemeral authenticated server and real MCP client exercise all
+**34 tools** using isolated artifacts, random temporary credentials and the
+official native engine. It verifies G-code semantics, exact resources/recovery,
+source/preset preservation, geometry/layer workflows and rejection cases.
+Detached-worker cleanup has controlled timeout/orphan regressions. The installed
+service and its credentials are not used by this suite.
+
+Coverage attribution confirms **all 699 catalog contracts executed** and native
+semantic fixtures for **15 catalog properties** plus modifier and HTTP function
+cases. **684 properties still lack independent native semantic oracles**.
+The public CI suite runs without the vendor app and therefore skips these
+native cases; the required native command must be run with a selected official
+installation. No GUI, live printer, new backend deployment or app update is
+part of this test-only change.
+
+Parallel worker runs exposed existing 0.2–1 second subprocess-timeout fixture
+flakes; those failures were retained in local reports. An earlier sequential
+parent run also had one 120-second native startup/slicing timeout in the
+pre-existing modifier test; the other sixteen native cases passed. The exact
+same saved input then sliced successfully through Bash and the unchanged
+Python slicer path (2.70 seconds). No root cause for that one native stall was
+established. No automatic retries, timeout increases, skipped cases or vendor
+changes were added. Its failed JSON/JUnit/logs remain preserved separately;
+the complete fresh parent run above passed every required case.
+See [property regression scopes and commands](docs/property-regressions.md).
+
 ## Strict Python service refactor (2026-10-23)
 
 The final implementation at clean wrapper commit `4b0641f` passed the required
@@ -39,10 +83,10 @@ are not a general speedup claim. Python allocation measurements exclude the
 native child process; this is neither a transport-latency nor a whole-machine
 memory benchmark. Each size also had one separate forced native slice.
 
-The reports and generated artifacts remain in ignored `.temp/`. The refactor
-does not expand the native property coverage: **ten catalog properties plus one
+The reports and generated artifacts remain in ignored `.temp/`. At that checkpoint, the refactor
+did not expand the native property coverage: **ten catalog properties plus one
 modifier case**, finite values/geometries and OFF-only auxiliary-fan checks.
-The other 689 catalog keys still lack native semantic fixtures. This validation
+The other 689 catalog keys lacked native semantic fixtures at that checkpoint. This validation
 does not certify GUI equivalence, physical prints or deployment of this branch.
 See [architecture and repeatable commands](docs/architecture.md).
 
@@ -107,8 +151,8 @@ uv run --frozen python scripts/property_coverage.py \
 ```
 
 Retain the resulting JSON and JUnit reports together: they identify the exact
-source revision and actual final counts. Only ten catalog properties currently
-have native fixture evidence; the other **689 have no native semantic fixture**.
+source revision and actual final counts. At this 2026-10-22 checkpoint, ten catalog properties had
+native fixture evidence; the other **689 had no native semantic fixture**.
 Their contract coverage must not be described as verified G-code effects.
 Even the native cases cover finite values/geometries, not every combination,
 physical print quality or GUI equivalence. See [case format and upgrade

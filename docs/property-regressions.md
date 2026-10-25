@@ -1,10 +1,14 @@
 # Property and function regressions
 
-The integration branch is `props_test_branch`. Its children use real setting or
-function names, for example `codex/props-test/outer_wall_speed` and
-`codex/props-test/add_modifier`. Child ancestry expresses the branch tree;
-Git cannot simultaneously store `props_test_branch` and a child ref named
-`props_test_branch/outer_wall_speed`.
+Start each integration branch from the agreed current `main`, for example
+`codex/feat/native-property-regressions`. Its children use real setting or
+function names, such as `codex/props-test/sparse_infill_speed` and
+`codex/props-test/native_http`. Merge five reviewed property children into that
+parent, verify the combined batch, then run the complete parent suite.
+The first two batches used `props_test_branch`; preserve historical branches
+when they diverge from a later refactor. Child ancestry expresses the branch
+tree: Git cannot simultaneously store a parent ref and a slash-prefixed child
+of exactly the same ref name.
 
 ## What the checks establish
 
@@ -41,7 +45,9 @@ case file, so a broken codec cannot supply its own expected answer.
 The first batch is `outer_wall_speed`, `inner_wall_speed`, `layer_height`,
 `wall_loops`, `sparse_infill_density`. The second is `enable_support`,
 `support_type`, `nozzle_temperature`, `cool_plate_temp`,
-`additional_cooling_fan_speed`.
+`additional_cooling_fan_speed`. The third batch is `sparse_infill_speed`,
+`top_surface_speed`, `internal_solid_infill_speed`, `initial_layer_speed` and
+`filament_flow_ratio`.
 
 Each property worker uses its own worktree and test temporary directory.
 Review and merge five property branches into the integration branch, run their
@@ -81,6 +87,52 @@ only from the explicit successful runner report for the matching schema source
 commit; JUnit test names alone are not semantic attribution. Failed/unexecuted
 cases remain missing. Auxiliary-fan evidence is specifically **OFF-only**;
 other geometries, values and combinations require additional fixtures.
+
+## Maintained real HTTP/native regression
+
+`tests/native/test_native_http.py` starts a separate CLI server on an ephemeral
+loopback port with a fresh token, temporary artifacts and synthetic 3MFs. It
+does not read client registrations, installed credentials or the persistent
+MCP service. It uses the explicitly bound official engine without a process
+double. The same required runner above executes this test.
+
+The single complete workflow verifies all 34 tools are invoked successfully,
+including edit/slice revision association, actual wall feedrates and nozzle
+temperature, regional modifier speeds, exact source recovery and resource
+content, object/plate edits and temporary preset CRUD. Bounded native scenarios
+also check arrangement of overlapping boxes, orientation of an on-bed box,
+adaptive layers/reset and a Z-band. Authentication, Host/Origin, stale revisions,
+failed-batch atomicity and prohibited post-processing have rejection assertions.
+
+The workflow records `mcp_http` as passed only after every scenario and process
+cleanup finishes. The required report now needs **17 cases**: fifteen property
+comparisons, the modifier and the HTTP workflow. Missing, skipped or stale
+cases fail completion. The property coverage report lists HTTP as a function
+case; invoking tools does not attribute additional property semantics.
+
+The server's native workers create separate sessions. Test-only process
+supervision tracks its unique scratch directory, descendant relationships and
+PID start/command identity, then terminates detached workers and waits for its
+server. Controlled Python child-process tests cover timeout and early-parent
+exit cleanup without requiring the slicer.
+
+The normal public CI suite runs these lifecycle and pure oracle tests; real
+native tests skip when no official engine was selected. Running the required
+native command locally or on an explicitly provisioned native runner is still
+necessary. No official app is downloaded or installed by these tests.
+
+The five new property modules have independent oracles and negative examples
+that reject comments, travel-only or unchanged output. Speeds target their
+specific extrusion role/layer. The flow comparison uses identical outer-wall
+paths and deposited E per XY length: 0.8 versus 1.2 must scale by 1.5, within
+0.2% for native E rounding. Its fixture fixes outer-wall speed at 20 mm/s and
+sets the volumetric cap to 100 mm3/s; this is a synthetic isolation condition,
+not a material preset recommendation. Top/internal/first-layer speed fixtures
+disable cooling slowdown locally and keep the official volumetric limit.
+
+Current native catalog coverage is **15 of 699 properties**; **684 keys** still
+have no independent native semantic fixture. Finite values, one material and
+small geometries do not certify all combinations or physical print quality.
 
 ## Modifier coordinates and scope
 
