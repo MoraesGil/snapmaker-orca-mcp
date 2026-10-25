@@ -11,7 +11,9 @@ import uuid
 
 EXPECTED = {'outer_wall_speed','inner_wall_speed','layer_height','wall_loops',
             'sparse_infill_density','enable_support','support_type',
-            'nozzle_temperature','cool_plate_temp','additional_cooling_fan_speed','modifier'}
+            'nozzle_temperature','cool_plate_temp','additional_cooling_fan_speed','modifier',
+            'sparse_infill_speed','top_surface_speed','internal_solid_infill_speed',
+            'initial_layer_speed','filament_flow_ratio','mcp_http'}
 
 def complete(data, initial):
     """Only this subprocess's fixture and all case records can certify its run."""

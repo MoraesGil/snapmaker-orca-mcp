@@ -130,3 +130,35 @@ def test_required_completion_requires_current_identity_and_each_case_run_id():
     for key in runner['EXPECTED']:
         bad=copy.deepcopy(data);bad['cases'][key]['run_id']='old'
         assert not runner['complete'](bad,initial)
+
+
+def test_required_completion_accepts_batch_three_only_with_every_new_case():
+    """Omitting a newly maintained property or HTTP pipeline must fail completion."""
+    import copy
+    import runpy
+    from pathlib import Path
+    complete = runpy.run_path(str(Path(__file__).resolve().parents[2] /
+                                 'scripts/run_native_regressions.py'))['complete']
+    keys = ('outer_wall_speed', 'inner_wall_speed', 'layer_height', 'wall_loops',
+            'sparse_infill_density', 'enable_support', 'support_type',
+            'nozzle_temperature', 'cool_plate_temp', 'additional_cooling_fan_speed',
+            'modifier', 'sparse_infill_speed', 'top_surface_speed',
+            'internal_solid_infill_speed', 'initial_layer_speed',
+            'filament_flow_ratio', 'mcp_http')
+    initial = {'run_id': 'this-run', 'test_source_commit': 'a' * 40,
+               'test_source_dirty': False,
+               'requested_engine': {'app': '/public/synthetic.app', 'source_commit': 'b' * 40}}
+    data = {**initial, 'engine_run_id': 'this-run', 'engine': {
+        'source_commit': 'b' * 40, 'native_version': '2.4.1',
+        'executable_sha256': 'c' * 64, 'resources_sha256': 'd' * 64,
+        'executable': '/public/synthetic.app/Contents/MacOS/Snapmaker_Orca',
+        'resources': '/public/synthetic.app/Contents/Resources'},
+        'cases': {key: {'status': 'pass', 'run_id': 'this-run'} for key in keys}}
+    assert complete(data, initial)
+    for key in keys:
+        omitted = copy.deepcopy(data)
+        del omitted['cases'][key]
+        assert not complete(omitted, initial), key
+        skipped = copy.deepcopy(data)
+        skipped['cases'][key]['status'] = 'skip'
+        assert not complete(skipped, initial), key
