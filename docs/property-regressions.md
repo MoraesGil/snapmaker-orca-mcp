@@ -59,7 +59,8 @@ The final integration runs the entire suite on the integration branch.
 ```sh
 uv sync --frozen --extra test
 mkdir -p .temp
-uv run --frozen --extra test pytest tests -q --junitxml=.temp/regression-suite.xml
+uv run --frozen --extra test pytest tests -m "not native" -q --strict-markers \
+  --junitxml=.temp/regression-suite.xml
 
 uv run --frozen --extra test python scripts/run_native_regressions.py \
   --all-tests \
@@ -72,11 +73,15 @@ uv run --frozen python scripts/property_coverage.py \
   --native-report .temp/native-regressions.json > .temp/property-coverage.json
 ```
 
-The regular suite is engine-independent: real native cases are explicitly
-skipped unless selected. The required native runner enables them and refuses
-missing-engine or incomplete/skipped native results. `--all-tests` runs every
-test on the integration branch with native execution enabled; omitting it
-runs only `tests/native`. The runner saves JUnit beside the JSON report.
+The first command explicitly selects only the engine-independent portable
+profile. Its deselected native cases are not counted as executed or passed.
+It is not the complete integration. The required native runner enables the
+official engine and `--all-tests` executes every test on the integration branch;
+any deselection, skip, xfail or xpass fails the complete gate. A missing engine
+is an error. Omitting `--all-tests` runs only `tests/native` and is a focused run.
+The runner replaces old JSON/JUnit evidence and requires actual executed cases
+with zero skipped, failed or errored cases, even when native case records claim
+success. It saves JUnit and test totals beside the JSON report.
 It records the Git revision,
 measured executable/resource hashes, declared native source, app version and
 per-case scope. It does not install or switch the slicer, call a running MCP
@@ -118,10 +123,12 @@ exit cleanup without requiring the slicer. Full-width `ps` snapshots preserve
 long commands even with `COLUMNS=80`; regression cases verify this Linux failure
 mode and that changed start-time/command identities never receive signals.
 
-The normal public CI suite runs these lifecycle and pure oracle tests; real
-native tests skip when no official engine was selected. Running the required
-native command locally or on an explicitly provisioned native runner is still
-necessary. No official app is downloaded or installed by these tests.
+The portable public CI profile runs these lifecycle and pure oracle tests with
+zero skips. Native cases are selected through their `native_engine` dependency
+only for the complete engine-enabled run. Invoking selected native cases without
+a configured engine fails. Running the required native command locally or on an
+explicitly provisioned native runner remains mandatory; portable CI cannot stand
+in for this evidence. No official app is downloaded or installed by these tests.
 
 The five new property modules have independent oracles and negative examples
 that reject comments, travel-only or unchanged output. Speeds target their

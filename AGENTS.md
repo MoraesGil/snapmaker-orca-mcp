@@ -8,3 +8,4 @@ Read [contribution-workflow.md](contribution-workflow.md) before changing this r
 - Deliver changes through a PR against the agreed base, normally `main`. Keep the worktree while the PR is open. Merge only when the owner authorizes it and required checks pass; then clean up safely.
 - Preserve source 3MFs, installed presets, geometry, painting, stable IDs and revision provenance. Use synthetic fixtures and report native-engine coverage separately from contract tests.
 - Validate the affected behavior, run the required checks and describe remaining gaps accurately. Never publish credentials, private models, generated G-code or local acceptance logs.
+- Accept no skipped, xfailed or xpassed tests. Repair relevant cases with reproducible fixtures; remove only obsolete cases with a documented reason. The complete native gate must execute every test without deselection; an explicitly partial portable profile cannot replace it.

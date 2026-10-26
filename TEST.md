@@ -2,6 +2,43 @@
 
 This record separates Python/MCP checks, real native slicing and physical printing. No printer operation or GUI-equivalence certification is implied by a passing test suite.
 
+## Complete validation without skips (2026-10-26)
+
+The complete required suite at clean wrapper commit `c3fd601` passed
+**1,496 tests, zero skips and zero deselections** in 229.60 seconds on macOS
+ARM64 / Python 3.12.8. All **17 native cases** ran with official Snapmaker Orca
+**2.4.1**, source `9bf2f18eaff7cc0655cbdeef6a215660085ecb0f`, and the unchanged
+executable/resource hashes below. Run `db696b9abec14548904b57065d3f46b9`
+has fresh paired JSON/JUnit evidence: 1,496 executed, 0 skipped, 0 failed,
+0 errors. All 699 catalog contracts ran; native semantic coverage remains
+15 properties, with 684 still requiring independently scoped native oracles.
+
+The skipped private split-geometry test protected relevant behavior. Its external
+file dependency was replaced with the existing public synthetic ZIP/XML fixture
+generated in `tmp_path`. The test now checks the complete edit chain, literal
+geometry/painting/IDs/extensions, split-mesh and relationship bytes, and source
+immutability. Four controlled corruptions failed: missing mesh, missing relations,
+removed painting and changed source. The project-edit module passed all 79 tests.
+No private model was opened or used to derive the fixture. This regression
+establishes editing preservation, not native slicing of that minimal geometry.
+
+Every selected test must execute and pass. Skips, collection skips, xfail and
+xpass now fail pytest. The complete runner also rejects deselection and checks
+fresh JUnit totals independently of the 17 native records. Missing engines fail;
+the obsolete modifier-not-integrated skip was removed because `add_modifier`
+is shipped and required. The supported POSIX cleanup test runs unconditionally.
+Twenty-two policy tests passed after reproducing the previous green-on-skip
+behavior in real isolated pytest processes, including a runner with successful
+native records but a skipped unrelated case.
+
+The explicitly partial portable profile passed **1,479 tests with zero skips**;
+its 17 native cases were deselected, not counted as passed. Public Linux/macOS CI
+uses that profile because it does not provision the vendor app. The complete
+native gate above executes those cases too; portable CI cannot replace it.
+See [commands and policy](docs/property-regressions.md#reproduce-the-integration).
+Earlier dated entries retain their historical skip counts; they do not satisfy
+the current zero-skip acceptance rule.
+
 ## Native HTTP and third property batch (2026-10-24)
 
 The maintained required suite at clean wrapper commit `6869187`
@@ -37,9 +74,10 @@ and included in the complete parent run above without changing timeouts.
 Coverage attribution confirms **all 699 catalog contracts executed** and native
 semantic fixtures for **15 catalog properties** plus modifier and HTTP function
 cases. **684 properties still lack independent native semantic oracles**.
-The public CI suite runs without the vendor app and therefore skips these
-native cases; the required native command must be run with a selected official
-installation. No GUI, live printer, new backend deployment or app update is
+At this checkpoint, public CI ran without the vendor app and skipped these
+native cases. The current portable/complete profile policy is recorded above.
+The required native command uses a selected official installation.
+No GUI, live printer, new backend deployment or app update was
 part of this test-only change.
 
 Parallel worker runs exposed existing 0.2–1 second subprocess-timeout fixture
@@ -59,7 +97,7 @@ The final implementation at clean wrapper commit `4b0641f` passed the required
 `--all-tests` run: **1,313 passed, 1 skipped** in 115.07 seconds on macOS ARM64
 with Python 3.14.7. All eleven required native cases executed with the same
 official Snapmaker Orca **2.4.1** engine/source and executable/resource hashes
-recorded below. The sole skip remains the absent historical private fixture.
+recorded below. The sole skip at that checkpoint was the absent private fixture.
 Run `8c0ff3b612df49be8faaa2ca92b3bece` has paired local JSON/JUnit reports;
 the fixture and report confirm the wrapper revision, clean state and run ID.
 
@@ -179,7 +217,7 @@ The extraction baseline at `6e56b1f` passed **240 tests with 1 skip**. The integ
 
 Tests use small process doubles at the native boundary to exercise source/revision preservation, stable IDs and component payloads, configuration codecs, atomic edits, stale SHA rejection, cache corruption, timeouts, recovery, preset inheritance/drafts, flow segments, settings metadata and MCP protocol behavior. These tests do not run the real slicing algorithms.
 
-The optional private geometry-fixture test skips when its input is absent. The recorded fixture SHA-256 is `a2765234f4a206ba55928492f6b7f1d3a95fc38345a09bbc7d83bb036831b49d`; its model and outputs are not distributed. Four public native preset fixtures include an independent [provenance manifest](tests/fixtures/snapmaker-profiles/PROVENANCE.json). Public tests require neither the old fork nor a C++ source checkout.
+The historical optional private geometry-fixture dependency (SHA-256 `a2765234f4a206ba55928492f6b7f1d3a95fc38345a09bbc7d83bb036831b49d`) was replaced on 2026-10-26 with a reproducible synthetic preservation test. Its private model and outputs remain undistributed. Four public native preset fixtures include an independent [provenance manifest](tests/fixtures/snapmaker-profiles/PROVENANCE.json). Public tests require neither the old fork nor a C++ source checkout.
 
 ## Official native engine evidence
 
