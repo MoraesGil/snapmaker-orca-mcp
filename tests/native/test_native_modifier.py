@@ -1,7 +1,6 @@
 from pathlib import Path
 from xml.etree import ElementTree as ET
 import zipfile
-import pytest
 from snapmaker_slicer_mcp.editor import Editor
 from snapmaker_slicer_mcp.service import Slicer
 from .harness import official_config,make_project,observe,feature_moves
@@ -9,9 +8,6 @@ from .conftest import record
 
 def test_real_native_modifier(native_engine,tmp_path):
     editor=Editor(Slicer(native_engine,tmp_path/'slicer',timeout=120))
-    if not hasattr(editor,'add_modifier'):
-        record(native_engine,'modifier','skip',{'reason':'add_modifier is not integrated'})
-        pytest.skip('add_modifier is not integrated; no regional semantics claimed')
     try:
         config=official_config(native_engine,tmp_path)
         path=make_project(tmp_path/'modifier.3mf',config)

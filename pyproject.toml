@@ -40,6 +40,8 @@ snapmaker-slicer-mcp = "snapmaker_slicer_mcp.cli:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+xfail_strict = true
+markers = ["native: requires the explicitly selected official native engine"]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
