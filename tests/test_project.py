@@ -527,33 +527,80 @@ def test_new_range_and_profile_members_have_content_types(source, tmp_path):
         assert any(e.get("PartName") == "/" + name or e.get("Extension") == name.rsplit(".", 1)[1] for e in types)
 
 
-def test_real_native_fixture_is_readonly_and_edits_preserve_split_geometry(tmp_path):
-    fixture = Path(__file__).resolve().parents[3] / ".temp/engine-update-9bf/linux/full-image-state/input.3mf"
-    if not fixture.is_file():
-        pytest.skip("Optional private native fixture is not distributed; see TEST.md for its audited hash")
-    source_hash = hashlib.sha256(fixture.read_bytes()).hexdigest()
-    assert source_hash == "a2765234f4a206ba55928492f6b7f1d3a95fc38345a09bbc7d83bb036831b49d"
-    original = payloads(fixture)
-    p = project(fixture)
-    assert p.list_objects()[0]["object_id"] == 2
-    p.set_object_config(2, {"wall_loops": 3, "extruder": 2})
-    p.transform_object(2, translate=[1, -1, 0])
-    p.set_height_range(2, 0, 2, 0.12)
-    clone = p.duplicate_object(2)
-    p.add_plate()
-    p.move_object_to_plate(clone, 2)
-    output = tmp_path / "real-edited.3mf"
+def test_synthetic_fixture_is_readonly_and_edits_preserve_split_geometry(source, tmp_path):
+    # This public fixture deliberately combines external painted meshes, a negative
+    # part, shared geometry, multiple instances, and required XML extensions.
+    before = source.read_bytes()
+    original = payloads(source)
+    p = project(source)
+    p.set_object_config(20, {"wall_loops": 3, "extruder": 2})
+    p.transform_object(20, translate=[1, -1, 0])
+    p.set_height_range(20, 1, 2, 0.12)
+    clone = p.duplicate_object(20)
+    plate = p.add_plate()
+    assert plate == 4
+    p.move_object_to_plate(clone, plate, instance_id=0)
+    output = tmp_path / "synthetic-edited.3mf"
     p.save(output)
     saved = payloads(output)
-    assert hashlib.sha256(fixture.read_bytes()).hexdigest() == source_hash
-    for name in original:
-        if name.startswith("3D/Objects/"):
-            assert saved[name] == original[name]
-    assert saved["3D/_rels/3dmodel.model.rels"] == original["3D/_rels/3dmodel.model.rels"]
+    assert source.read_bytes() == before
+    mesh_names = {"3D/Objects/painted.model", "3D/Objects/negative.model"}
+    assert {name for name in saved if name.startswith("3D/Objects/")} == mesh_names
+    for name, object_id in (("3D/Objects/painted.model", "3"),
+                            ("3D/Objects/negative.model", "7")):
+        assert saved[name] == original[name]
+        mesh_root = ET.fromstring(saved[name])
+        mesh_object = mesh_root.find(f"{{{CORE}}}resources/{{{CORE}}}object")
+        assert mesh_object.get("id") == object_id
+        assert mesh_object.get(f"{{{PROD}}}UUID") == "mesh-3"
+        assert [vertex.attrib for vertex in mesh_object.iter(f"{{{CORE}}}vertex")] == [
+            {"x": "0", "y": "0", "z": "0"},
+            {"x": "1", "y": "0", "z": "0"},
+            {"x": "0", "y": "1", "z": "1"},
+        ]
+        assert [triangle.attrib for triangle in mesh_object.iter(f"{{{CORE}}}triangle")] == [
+            {"v1": "0", "v2": "1", "v3": "2", "paint_color": "1",
+             "paint_supports": "2", "paint_seam": "3"},
+        ]
+    rel_name = "3D/_rels/3dmodel.model.rels"
+    assert saved[rel_name] == original[rel_name]
+    assert [rel.attrib for rel in ET.fromstring(saved[rel_name])] == [{
+        "Id": "mesh", "Target": "/3D/Objects/painted.model",
+        "Type": "http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel",
+    }]
+    root = ET.fromstring(saved["3D/3dmodel.model"])
+    assert root.get("requiredextensions") == "p q"
+    xml = saved["3D/3dmodel.model"].decode()
+    assert f'xmlns:p="{PROD}"' in xml
+    assert 'xmlns:q="urn:required-but-unused"' in xml
+    roots = root.find(f"{{{CORE}}}resources")
+    assert [item.get("id") for item in roots] == ["20", "40", str(clone)]
+    assert [item.get(f"{{{PROD}}}UUID") for item in roots[:2]] == ["root-20", "root-40"]
+    assert [part.get(f"{{{PROD}}}UUID")
+            for part in roots[0].find(f"{{{CORE}}}components")] == ["component-3", "component-7"]
+    build = root.find(f"{{{CORE}}}build")
+    assert build.get(f"{{{PROD}}}UUID") == "build-id"
+    assert [item.get(f"{{{PROD}}}UUID") for item in list(build)[:3]] == [
+        "instance-20-0", "instance-20-1", "instance-40-0",
+    ]
+    for assembly in (roots[0], roots[2]):
+        assert [(part.get("objectid"), part.get(f"{{{PROD}}}path"))
+                for part in assembly.find(f"{{{CORE}}}components")] == [
+            ("3", "/3D/Objects/painted.model"),
+            ("7", "/3D/Objects/negative.model"),
+        ]
     reloaded = project(output)
-    assert [o["object_id"] for o in reloaded.list_objects()] == [2, clone]
-    assert reloaded.list_objects()[1]["instances"][0]["plate"] == 2
-    assert 'requiredextensions="p"' in saved["3D/3dmodel.model"].decode()
+    objects = reloaded.list_objects()
+    assert [obj["object_id"] for obj in objects] == [20, 40, clone]
+    assert objects[0]["config"]["wall_loops"] == "3"
+    assert objects[0]["config"]["extruder"] == "2"
+    assert objects[0]["instances"][0]["transform"][-3:] == [11, 19, 0]
+    assert objects[2]["instances"][0]["plate"] == 4
+    assert objects[2]["parts"] == objects[0]["parts"]
+    ranges = ET.fromstring(saved[RANGES])
+    edited_range = ranges.find("object[@id='1']/range[@min_z='1']")
+    assert edited_range.get("max_z") == "2"
+    assert edited_range.find("option[@opt_key='layer_height']").text == "0.12"
 
 
 def test_layer_ordinals_follow_first_build_occurrence_not_resources_order(source, tmp_path):
