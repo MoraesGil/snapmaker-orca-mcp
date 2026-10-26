@@ -53,7 +53,7 @@ For a new behavior or bug fix, reproduce the failure with a focused regression b
 
 ```sh
 uv run --frozen --extra test mypy
-uv run --frozen --extra test pytest tests -q
+uv run --frozen --extra test pytest tests -m "not native" -q --strict-markers
 uv run --isolated scripts/check_sdk1_interop.py --server-python .venv/bin/python --scratch .temp/sdk1-interop
 bash -n bin/snapmaker-slice.sh
 uv build
@@ -61,7 +61,9 @@ uv run --frozen python scripts/check_distribution.py
 git diff --check
 ```
 
-Python 3.11+ is required for the service. The regular suite can run without a slicer or printer; it does not prove native G-code semantics. CI checks Linux and macOS across Python 3.11–3.13. For documentation-only changes, verify links and commands and explain any checks omitted.
+Python 3.11+ is required for the service. The explicitly selected portable profile above runs without a slicer or printer; it is partial and does not prove native G-code semantics. CI runs that profile on Linux and macOS across Python 3.11–3.13. For documentation-only changes, verify links and commands and explain any checks omitted.
+
+Selected tests must pass: skips, xfail and xpass make the run fail. Replace unavailable private fixtures with reproducible synthetic cases when their behavior remains relevant. Remove a test only when its protected behavior is obsolete, explaining the reason. A missing required engine is an error. The complete native command below rejects any deselected test and requires a fresh JUnit report with executed cases and zero skips, failures or errors. Do not present portable CI as the complete validation.
 
 For slicing/property/modifier behavior, run the required native integration with an explicitly selected official Snapmaker Orca installation and its matching resources. On macOS:
 
@@ -72,7 +74,7 @@ uv run --frozen --extra test python scripts/run_native_regressions.py \
   --report .temp/native-regressions.json
 ```
 
-Replace the placeholder with the engine identity you verified; it is not this wrapper's Git SHA. Clear inherited `PYTEST_ADDOPTS` before a complete run. Keep the paired JSON/JUnit reports locally and record the wrapper SHA/dirty state, engine version/source identity/hashes, counts, skips and remaining gaps. Do not reuse reports after a code or engine change. See [property regressions](docs/property-regressions.md) and [validation records](TEST.md); Linux runtime setup is in [LINUX.md](LINUX.md).
+Replace the placeholder with the engine identity you verified; it is not this wrapper's Git SHA. Clear inherited `PYTEST_ADDOPTS` before a complete run. Keep the paired JSON/JUnit reports locally and record the wrapper SHA/dirty state, engine version/source identity/hashes, executed counts, zero-skip result and remaining gaps. Do not reuse reports after a code or engine change. See [property regressions](docs/property-regressions.md) and [validation records](TEST.md); Linux runtime setup is in [LINUX.md](LINUX.md).
 
 Distinguish contract validation, saved-3MF persistence and observed native toolpaths. State which properties, values and geometries were exercised; catalog coverage does not imply native coverage. A digital slice does not certify GUI equivalence or physical printing.
 

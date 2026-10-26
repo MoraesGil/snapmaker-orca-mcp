@@ -53,6 +53,8 @@ def report(junit=None, native_report=None):
                     native_properties[key] = case
                 elif key == 'modifier':
                     native_functions['add_modifier'] = case
+                elif key == 'mcp_http':
+                    native_functions['mcp_http'] = case
     return {'schema_matches_pin': schema_fingerprint() == doc['schema_sha256'],
             'source_commit': doc['source_commit'], 'catalog_count': len(cases),
             'contract_matrix_declared': sorted(cases), 'contract_matrix_executed_passed': sorted(set(contract_passed)), 'policy_rejections': blocked,

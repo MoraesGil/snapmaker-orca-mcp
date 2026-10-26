@@ -28,7 +28,8 @@ jobs:
       - run: uv sync --locked --extra test
       - name: Check strict Python contracts
         run: uv run --locked --extra test mypy
-      - run: uv run --locked --extra test pytest tests -q
+      - name: Engine-independent contracts and process tests (zero skips)
+        run: uv run --locked --extra test pytest tests -m "not native" -q --strict-markers
       - name: Check isolated MCP SDK-v1 interoperability
         if: matrix.python == '3.11'
         run: uv run --isolated scripts/check_sdk1_interop.py --server-python .venv/bin/python --scratch .temp/sdk1-interop

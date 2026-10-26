@@ -1,0 +1,9 @@
+{
+  "key": "filament_flow_ratio",
+  "batch": 3,
+  "valid": [
+    {"value": [0.8, 1.2], "normalized": ["0.8", "1.2"], "xml": "0.8,1.2"},
+    {"value": [0, 2], "normalized": ["0", "2"], "xml": "0,2"}
+  ],
+  "invalid": [[-0.01, 1], [2.01, 1], ["NaN", 1], [true, 1], 1]
+}

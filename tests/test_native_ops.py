@@ -378,10 +378,10 @@ def test_failures_and_engine_drift_leave_diagnostics(tmp_path):
         native_deltas(engine, project, tmp_path / "drift", arrange=True)
 
 
-@pytest.mark.skipif(os.name != "posix", reason="process groups are POSIX")
 def test_timeout_terminates_native_process_group(tmp_path):
     from snapmaker_slicer_mcp.native_ops import native_deltas
 
+    assert os.name == 'posix', 'Native process cleanup requires the supported macOS/Linux platform'
     engine, binary = boundary(tmp_path)
     binary.with_suffix(".mode").write_text("descendant")
     with pytest.raises(TimeoutError):

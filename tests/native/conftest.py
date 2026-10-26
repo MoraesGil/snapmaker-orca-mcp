@@ -9,12 +9,12 @@ from . import harness
 @pytest.fixture(scope='session')
 def native_engine(tmp_path_factory):
     if os.environ.get('SNAPMAKER_NATIVE')!='1':
-        pytest.skip('native semantics not run; set SNAPMAKER_NATIVE=1 or use required runner')
+        pytest.fail('Selected native tests require the official engine; use scripts/run_native_regressions.py. '
+                    'For the engine-independent profile select -m "not native" explicitly.', pytrace=False)
     from snapmaker_slicer_mcp.engine import Engine
     app=Path(os.environ.get('SNAPMAKER_NATIVE_APP','/Applications/Snapmaker Orca.app'))/'Contents'
     if not (app/'MacOS/Snapmaker_Orca').is_file():
-        if os.environ.get('SNAPMAKER_NATIVE_REQUIRED')=='1': pytest.fail('Required native engine is absent')
-        pytest.skip('native engine unavailable; no semantic evidence')
+        pytest.fail('Required native engine is absent', pytrace=False)
     harness.APP=app
     commit=os.environ.get('SNAPMAKER_NATIVE_COMMIT',harness.COMMIT)
     assert commit==harness.COMMIT, 'Explicit regression expectation update required for a changed source binding'

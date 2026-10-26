@@ -1,0 +1,9 @@
+{
+  "key": "top_surface_speed",
+  "batch": 3,
+  "valid": [
+    {"value": [20, 60], "normalized": ["20", "60"], "xml": "20,60"},
+    {"value": [1, 42.5], "normalized": ["1", "42.5"], "xml": "1,42.5"}
+  ],
+  "invalid": [[0, 60], [-1, 60], ["NaN", 60], [true, 60], 20]
+}

@@ -8,10 +8,31 @@ import re
 import subprocess
 import sys
 import uuid
+from xml.etree import ElementTree as ET
 
 EXPECTED = {'outer_wall_speed','inner_wall_speed','layer_height','wall_loops',
             'sparse_infill_density','enable_support','support_type',
-            'nozzle_temperature','cool_plate_temp','additional_cooling_fan_speed','modifier'}
+            'nozzle_temperature','cool_plate_temp','additional_cooling_fan_speed','modifier',
+            'sparse_infill_speed','top_surface_speed','internal_solid_infill_speed',
+            'initial_layer_speed','filament_flow_ratio','mcp_http'}
+
+def junit_totals(path):
+    """Require actual executed cases and reject skips/failures, including declarations."""
+    totals = {'tests': 0, 'skipped': 0, 'failures': 0, 'errors': 0, 'passed': False}
+    try:
+        root = ET.parse(path).getroot()
+        cases = list(root.iter('testcase'))
+        totals['tests'] = len(cases)
+        for key, tag in (('skipped', 'skipped'), ('failures', 'failure'), ('errors', 'error')):
+            observed = sum(case.find(tag) is not None for case in cases)
+            declared = [int(suite.get(key, '0')) for suite in root.iter('testsuite')]
+            if any(value < 0 for value in declared):
+                return totals
+            totals[key] = max(observed, sum(declared))
+        totals['passed'] = bool(cases) and not any(totals[key] for key in ('skipped', 'failures', 'errors'))
+    except (OSError, ET.ParseError, ValueError):
+        pass
+    return totals
 
 def complete(data, initial):
     """Only this subprocess's fixture and all case records can certify its run."""
@@ -54,6 +75,7 @@ def main():
              'cases':{key:{'status':'not_run'} for key in sorted(EXPECTED)}}
     # Truncate any earlier evidence BEFORE dispatch, even when pytest selects no fixture.
     report.write_text(json.dumps(initial,indent=2)+'\n')
+    report.with_suffix('.xml').unlink(missing_ok=True)
     if a.all_tests and os.environ.get('PYTEST_ADDOPTS', ''):
         initial.update(status='fail',reason='--all-tests requires empty inherited PYTEST_ADDOPTS')
         report.write_text(json.dumps(initial,indent=2)+'\n')
@@ -63,6 +85,7 @@ def main():
         report.write_text(json.dumps(initial,indent=2)+'\n')
         p.error('Required native engine is absent')
     env=dict(os.environ,SNAPMAKER_NATIVE='1',SNAPMAKER_NATIVE_REQUIRED='1',
+             SNAPMAKER_COMPLETE_SUITE='1' if a.all_tests else '0',
              SNAPMAKER_NATIVE_APP=initial['requested_engine']['app'],
              SNAPMAKER_NATIVE_COMMIT=a.source_commit,SNAPMAKER_NATIVE_REPORT=str(report),
              SNAPMAKER_NATIVE_RUN_ID=initial['run_id'],SNAPMAKER_NATIVE_TEST_COMMIT=source_commit,
@@ -75,9 +98,11 @@ def main():
         if not isinstance(data,dict): raise ValueError('Invalid report')
     except (OSError,ValueError):
         data={**initial,'reason':'missing or invalid current run report'}
-    success=result.returncode==0 and complete(data,initial)
+    totals=junit_totals(report.with_suffix('.xml'))
+    data['test_totals']=totals
+    success=result.returncode==0 and complete(data,initial) and totals['passed']
     data['status']='pass' if success else 'fail'
-    if not success: data['reason']='Required native coverage incomplete or not from the current run'
+    if not success: data['reason']='Required native coverage incomplete, not from the current run, or JUnit has skipped/failed tests'
     report.write_text(json.dumps(data,indent=2)+'\n')
     if not success:
         print('Required native coverage incomplete; inspect JSON report',file=sys.stderr)

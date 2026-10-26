@@ -137,13 +137,15 @@ Conventional Commits, validation and pull requests.
 ```sh
 uv sync --frozen --extra test
 uv run --frozen --extra test mypy
-uv run pytest -q
+uv run --frozen --extra test pytest tests -m "not native" -q --strict-markers
 bash -n bin/snapmaker-slice.sh
 ```
 
-The service tests use native-boundary fixtures; optional tests can exercise a
-separately installed official engine. Local benchmarks and customer models do
-not belong in the public repository.
+This portable profile uses native-process boundary fixtures. It is partial;
+the [required complete suite](docs/property-regressions.md#reproduce-the-integration)
+also executes every native case with a separately installed official engine.
+Selected tests may not skip or xfail; the complete gate also rejects deselection
+and missing engines. Local benchmarks and customer models do not belong in Git.
 
 The Python service separates typed domain values, application contracts/services
 and concrete adapters. See [the service architecture](docs/architecture.md) for

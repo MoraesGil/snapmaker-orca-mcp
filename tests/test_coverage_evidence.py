@@ -57,3 +57,18 @@ def test_engine_hashes_and_actual_case_scope_are_required(tmp_path):
     del data['cases']['layer_height']['scope']
     path.write_text(json.dumps(data))
     assert reporter()(native_report=path)['native_fixture_passed_properties'] == []
+
+
+def test_http_function_evidence_is_distinct_from_catalog_property_coverage(tmp_path):
+    path = evidence(tmp_path)
+    data = json.loads(path.read_text())
+    data['cases']['mcp_http'] = {'status': 'pass', 'scope': 'real HTTP MCP to official engine and command assertions',
+                                'tools_exercised': ['load_model', 'set_config', 'slice_project']}
+    path.write_text(json.dumps(data))
+    result = reporter()(native_report=path)
+    assert result['native_function_cases']['mcp_http']['scope'] == 'real HTTP MCP to official engine and command assertions'
+    assert result['native_fixture_passed_properties'] == ['layer_height']
+    assert len(result['missing_native_semantic_coverage']) == 698
+    data['cases']['mcp_http']['status'] = 'not_run'
+    path.write_text(json.dumps(data))
+    assert 'mcp_http' not in reporter()(native_report=path)['native_function_cases']
